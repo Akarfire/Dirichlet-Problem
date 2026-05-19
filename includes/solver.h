@@ -3,9 +3,8 @@
 #include <tuple>
 #include <functional>
 
-#define M_PI 3.14159
-
-using FuncType = std::function<double(double)>;
+using FFuncType = std::function<double(double, double)>;
+using BoundaryFuncType = std::function<double(double)>;
 
 class Solver final
 {
@@ -16,9 +15,10 @@ public:
 
     // Static solver methods
 
-    static std::vector<double> solveSeidelMethod(FuncType f,
+    static std::vector<double> solveSeidelMethod(FFuncType f,
                                                  double a, double b, 
                                                  double c, double d,
-                                                 FuncType mu1, FuncType mu2, 
-                                                 FuncType mu3, FuncType mu4);
+                                                 BoundaryFuncType mu1, BoundaryFuncType mu2, 
+                                                 BoundaryFuncType mu3, BoundaryFuncType mu4,
+                                                 unsigned n, unsigned m);
 };
