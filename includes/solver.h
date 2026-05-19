@@ -12,11 +12,12 @@ private:
     Solver() {}
 
     class Solution {
+    private:
         FFuncType f;
         double a, b;
         double c, d;
-        double x_step;
-        double y_step;
+        double x_step; // h
+        double y_step; // k
         BoundaryFuncType mu1, mu2;
         BoundaryFuncType mu3, mu4;
         unsigned n, m;
@@ -36,18 +37,14 @@ private:
 
         std::vector<std::vector<double>> solve();
     };
-
-
-
-
 public:
-
     // Static solver methods
-
+    
     static std::vector<std::vector<double>> solveSeidelMethod(FFuncType f,
                                                  double a, double b, 
                                                  double c, double d,
                                                  BoundaryFuncType mu1, BoundaryFuncType mu2, 
                                                  BoundaryFuncType mu3, BoundaryFuncType mu4,
-                                                 unsigned n, unsigned m, unsigned NMAX);
+                                                 unsigned n, unsigned m,
+                                                 unsigned NMAX);
 };
