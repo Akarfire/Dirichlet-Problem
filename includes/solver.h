@@ -16,4 +16,9 @@ public:
 
     // Static solver methods
 
+    static std::vector<double> solveSeidelMethod(FuncType f,
+                                                 double a, double b, 
+                                                 double c, double d,
+                                                 FuncType mu1, FuncType mu2, 
+                                                 FuncType mu3, FuncType mu4);
 };
