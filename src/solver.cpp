@@ -9,8 +9,8 @@ inline double Solver::Solution::getY(unsigned ind) {
 }
 
 std::vector<std::vector<double>> Solver::Solution::solve() {
-    double x_step = (b - a) / n;
-    double y_step = (c - d) / m;
+    x_step = (b - a) / n;
+    y_step = (d - c) / m;
 
     const double inv_x_step_sq = 1 / (x_step * x_step);
     const double inv_y_step_sq = 1 / (y_step * y_step);
