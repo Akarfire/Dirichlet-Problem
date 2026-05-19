@@ -33,6 +33,11 @@ def test_mu4(x):
 
 # ...
 
+# Simple test
+n = 4
+m = 5
+NMAX = 100
+print(dirichletsolver.solve_seidel_method(test_f, a, b, c, d, test_mu1, test_mu2, test_mu3, test_mu4, n, m, 100))
 
 # STREAM LIT
 
