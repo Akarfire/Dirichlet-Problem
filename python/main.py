@@ -7,6 +7,30 @@ import plotly.graph_objects as graph
 
 
 # Problem Parameters
+a = 1.0
+b = 2.0
+c = 2.0
+d = 3.0
+
+# Test Seidel
+def test_analytical(x, y):
+    return math.sin(math.pi * x * y)
+
+def test_f(x, y):
+    return math.pi * math.pi * (x * x + y * y) * math.sin(math.pi * x * y)
+
+def test_mu1(y):
+   return math.sin(math.pi * a * y)
+
+def test_mu2(y):
+   return math.sin(math.pi * b * y)
+
+def test_mu3(x):
+   return math.sin(math.pi * c * x)
+
+def test_mu4(x):
+   return math.sin(math.pi * d * x)
+
 # ...
 
 
