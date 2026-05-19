@@ -19,20 +19,20 @@ std::vector<std::vector<double>> Solver::Solution::solve() {
 
     std::vector<std::vector<double>> V(n + 1);
 
-    for (size_t i = 0; i < n; i++) {
+    for (unsigned i = 0; i < n + 1; i++) {
         V[i].resize(m + 1);
         V[i][0] = mu3(getX(i)); 
         V[i][m] = mu4(getX(i));
     }
 
-    for (size_t j = 1; j < m - 1; j++) {
+    for (unsigned j = 1; j < m - 1; j++) {
         V[0][j] = mu1(getY(j));
         V[n][j] = mu2(getY(j));
     }
 
-    for (size_t iteration = 1; iteration <= ITERMAX; iteration++) {
-        for (size_t j = 1; j < m; j++) {
-            for (size_t i = 1; i < n; i++) {
+    for (unsigned iteration = 1; iteration <= ITERMAX; iteration++) {
+        for (unsigned j = 1; j < m; j++) {
+            for (unsigned i = 1; i < n; i++) {
                 V[i][j] = inv_A * (
                                 - f(getX(i), getY(j))
                                 - inv_x_step_sq * V[i - 1][j]
