@@ -37,11 +37,20 @@ def test_mu4(x):
 n = 4
 m = 5
 NMAX = 100
-print(dirichletsolver.solve_seidel_method(test_f, a, b, c, d, test_mu1, test_mu2, test_mu3, test_mu4, n, m, 100))
+solution = dirichletsolver.solve_seidel_method(test_f, a, b, c, d, test_mu1, test_mu2, test_mu3, test_mu4, int(n), int(m), 100)
+
+for i in solution:
+   print(i)
+
+x_step = (b - a) / n
+y_step = (d - c) / m
+errors = [[solution[i][j] - test_analytical(a + x_step * i, c + y_step * j) for i in range(n)] for j in range(m)]
+
+#print(max([max(e) for e in errors]))
 
 # STREAM LIT
 
-# # Initialize session state
+# Initialize session state
 # if 'data' not in st.session_state:
 #     st.session_state.data = None
 
@@ -49,7 +58,7 @@ print(dirichletsolver.solve_seidel_method(test_f, a, b, c, d, test_mu1, test_mu2
 # st.set_page_config(layout="wide")
 # st.title('Задача Дирихле для уравнения Пуассона')
 
-# # # Sidebar
+# # Sidebar
 # with st.sidebar:
 #     st.header("Параметры")
     
@@ -92,40 +101,6 @@ print(dirichletsolver.solve_seidel_method(test_f, a, b, c, d, test_mu1, test_mu2
 #                 control_vector = [test_analytical(0.0 + i * (1 / n)) for i in range(n + 1)]
 #                 control_graph = control_vector
             
-#             elif problem_id == 1:
-#                 k1 = main_k1
-#                 k2 = main_k2
-#                 q1 = main_q1
-#                 q2 = main_q2
-#                 f1 = main_f1
-#                 f2 = main_f2
-                
-#                 v_vector = boundarysolver.solve_bvp(k1, k2, q1, q2, f1, f2, ksi, mu1, mu2, int(n))
-#                 control_graph = boundarysolver.solve_bvp(k1, k2, q1, q2, f1, f2, ksi, mu1, mu2, int(n) * 2)
-#                 control_vector = control_graph[::2]
-
-#             elif problem_id == 2:
-#                 k1 = test_k1
-#                 k2 = test_k2
-#                 q1 = test_q1
-#                 q2 = test_q2
-#                 f1 = test_f1
-#                 f2 = test_f2
-                
-#                 v_vector = boundarysolver.solve_bvp_mixed_test_function(k1, k2, q1, q2, f1, f2, ksi, int(n), gamma1, gamma2, theta1, theta2)
-#                 control_vector = [test_analytical_mixed(0.0 + i * (1 / n)) for i in range(n + 1)]
-#                 control_graph = control_vector
-                
-#             elif problem_id == 3:
-#                 k1 = main_k1
-#                 k2 = main_k2
-#                 q1 = main_q1
-#                 q2 = main_q2
-#                 f1 = main_f1
-#                 f2 = main_f2
-                
-#                 v_vector = boundarysolver.solve_bvp_mixed_advanced_approximation(k1, k2, q1, q2, f1, f2, ksi, int(n), gamma1, gamma2, theta1, theta2)
-#                 control_graph = boundarysolver.solve_bvp_mixed_advanced_approximation(k1, k2, q1, q2, f1, f2, ksi, int(n) * 2, gamma1, gamma2, theta1, theta2)
 #                 control_vector = control_graph[::2]
             
 #             error_eval_list = [abs(v_vector[i] - control_vector[i]) for i in range(n + 1)]
@@ -238,99 +213,44 @@ print(dirichletsolver.solve_seidel_method(test_f, a, b, c, d, test_mu1, test_mu2
 # Задача решена с погрешностью ε1 = {error}; \n
 # Максимальное отклонение аналитического и численного решений наблюдается в точке x = {max_error_x}.
 # """)
-        
-#     elif problem == 1:
-#         st.info(f"""Для решения задачи использована равномерная сетка с числом разбиений n = {n}; \n
-# Задача должна быть решена с погрешностью не более ε = 0.5⋅10^(–6); \n
-# Задача решена с погрешностью ε2 = {error}; \n
-# Максимальное отклонение аналитического и численного решений наблюдается в точке x = {max_error_x}.
-# """)
     
-#     elif problem == 2:
-#         st.info(f"""Для решения задачи использована равномерная сетка с числом разбиений n = {n}; \n
-# Задача должна быть решена с погрешностью не более ε = 0.5⋅10^(–6); \n
-# Задача решена с погрешностью ε3 = {error}; \n
-# Максимальное отклонение аналитического и численного решений наблюдается в точке x = {max_error_x}.
-# """)
-        
-#     elif problem == 3:
-#         st.info(f"""Для решения задачи использована равномерная сетка с числом разбиений n = {n}; \n
-# Задача должна быть решена с погрешностью не более ε = 0.5⋅10^(–6); \n
-# Задача решена с погрешностью ε4 = {error}; \n
-# Максимальное отклонение аналитического и численного решений наблюдается в точке x = {max_error_x}.
-# """)
+   #  # DATA
+   #  st.subheader("Таблица")
     
-#     # DATA
-#     st.subheader("Таблица")
-    
-#     # Table data
-#     if problem == 0 or problem == 2:
-#         table_data = []
-#         for i in range(n + 1):
-#             table_data.append({
-#                 "N": i,
-#                 "X_i": 0.0 + i * (1 / n),
-#                 "U_i": control_vector[i],
-#                 "V_i": v_vector[i],
-#                 "U_i - V_i": control_vector[i] - v_vector[i],
-#             })
+   #  # Table data
+   #  if problem == 0 or problem == 2:
+   #      table_data = []
+   #      for i in range(n + 1):
+   #          table_data.append({
+   #              "N": i,
+   #              "X_i": 0.0 + i * (1 / n),
+   #              "U_i": control_vector[i],
+   #              "V_i": v_vector[i],
+   #              "U_i - V_i": control_vector[i] - v_vector[i],
+   #          })
             
-#         column_config = {
-#             "N": st.column_config.NumberColumn(
-#                 "N"
-#             ),
-#             "X_i": st.column_config.NumberColumn(
-#                 "X_i",
-#                 format="%.5f"
-#             ),
-#             "U_i": st.column_config.NumberColumn(
-#                 "U_i",
-#                 format="%.5f"
-#             ),
-#             "V_i": st.column_config.NumberColumn(
-#                 "V_i",
-#                 format="%.5f"
-#             ),
-#             "U_i - V_i": st.column_config.NumberColumn(
-#                 "U_i - V_i",
-#                 format="%.15f"
-#             )
-#         }
+   #      column_config = {
+   #          "N": st.column_config.NumberColumn(
+   #              "N"
+   #          ),
+   #          "X_i": st.column_config.NumberColumn(
+   #              "X_i",
+   #              format="%.5f"
+   #          ),
+   #          "U_i": st.column_config.NumberColumn(
+   #              "U_i",
+   #              format="%.5f"
+   #          ),
+   #          "V_i": st.column_config.NumberColumn(
+   #              "V_i",
+   #              format="%.5f"
+   #          ),
+   #          "U_i - V_i": st.column_config.NumberColumn(
+   #              "U_i - V_i",
+   #              format="%.15f"
+   #          )
+   #      }
         
-#         st.dataframe(table_data, width='stretch', column_config=column_config)
+   #      st.dataframe(table_data, width='stretch', column_config=column_config)
         
-        
-#     elif problem == 1 or problem == 3:
-#         table_data = []
-#         for i in range(n + 1):
-#             table_data.append({
-#                 "N": i,
-#                 "X_i": 0.0 + i * (1 / n),
-#                 "V_i": v_vector[i],
-#                 "V2_i": control_vector[i],
-#                 "V2_i - V_i": control_vector[i] - v_vector[i],
-#             })
-            
-#         column_config = {
-#             "N": st.column_config.NumberColumn(
-#                 "N"
-#             ),
-#             "X_i": st.column_config.NumberColumn(
-#                 "X_i",
-#                 format="%.15f"
-#             ),
-#             "V_i": st.column_config.NumberColumn(
-#                 "V_i",
-#                 format="%.15f"
-#             ),
-#             "V2_i": st.column_config.NumberColumn(
-#                 "V2_i",
-#                 format="%.15f"
-#             ),
-#             "V2_i - V_i": st.column_config.NumberColumn(
-#                 "V2_i - V_i",
-#                 format="%.15f"
-#             )
-#         }
-        
-#         st.dataframe(table_data, width='stretch', column_config=column_config)
+   
