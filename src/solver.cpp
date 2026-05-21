@@ -1,16 +1,16 @@
 #include "solver.h"
 
-inline double Solver::Solution::getX(unsigned ind) {
+inline double Solver::SeidelSolution::getX(unsigned ind) {
     return a + ind * x_step;
 }
 
-inline double Solver::Solution::getY(unsigned ind) {
+inline double Solver::SeidelSolution::getY(unsigned ind) {
     return b + ind * y_step;
 }
 
-std::vector<std::vector<double>> Solver::Solution::solve() {
-    double x_step = (b - a) / n;
-    double y_step = (c - d) / m;
+std::vector<std::vector<double>> Solver::SeidelSolution::solve() {
+    x_step = (b - a) / n;
+    y_step = (d - c) / m;
 
     const double inv_x_step_sq = 1 / (x_step * x_step);
     const double inv_y_step_sq = 1 / (y_step * y_step);
@@ -54,6 +54,6 @@ std::vector<std::vector<double>> Solver::solveSeidelMethod(FFuncType f,
                                               unsigned n, unsigned m,
                                               unsigned NMAX)
 {
-    Solution solution(f, a, b, c, d, mu1, mu2, mu3, mu4, n, m, NMAX);
-    return solution.solve();
+    SeidelSolution SeidelSolution(f, a, b, c, d, mu1, mu2, mu3, mu4, n, m, NMAX);
+    return SeidelSolution.solve();
 }

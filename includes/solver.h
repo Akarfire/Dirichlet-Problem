@@ -11,7 +11,7 @@ class Solver final
 private:
     Solver() {}
 
-    class Solution {
+    class SeidelSolution {
     private:
         FFuncType f;
         double a, b;
@@ -26,7 +26,7 @@ private:
         inline double getX(unsigned ind);
         inline double getY(unsigned ind);
     public:
-        Solution(FFuncType f_,
+        SeidelSolution(FFuncType f_,
                  double a_, double b_, 
                  double c_, double d_,
                  BoundaryFuncType mu1_, BoundaryFuncType mu2_, 
