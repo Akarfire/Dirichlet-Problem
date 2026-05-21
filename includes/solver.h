@@ -25,8 +25,6 @@ private:
     class Solution 
     {
     private:
-        
-
         std::shared_ptr<ErrorEvaluationType> errorEval;
         FFuncType f;
         double a, b;
