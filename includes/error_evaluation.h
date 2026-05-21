@@ -57,7 +57,12 @@ public:
     }
 
     // Should calculations continue or not
-    bool getEvaluationResult() { return maxError > epsilon; }
+    bool getEvaluationResult() 
+    { 
+        bool result =  maxError > epsilon; 
+        maxError = 0.0;
+        return result;
+    }
 };
 
 
@@ -68,7 +73,7 @@ class HeuristicErrorEvaluation : public ErrorEvaluation
 
 public:
     HeuristicErrorEvaluation(double epsilon_) : 
-        ErrorEvaluation(epsilon) {}
+        ErrorEvaluation(epsilon_) {}
     virtual ~HeuristicErrorEvaluation() {}
 
     // Implement this in derived classes
@@ -86,5 +91,10 @@ public:
     }
 
     // Should calculations continue or not
-    bool getEvaluationResult() { return maxError > epsilon; }
+    bool getEvaluationResult() 
+    { 
+        bool result = maxError > epsilon; 
+        maxError = 0.0;
+        return result;
+    }
 };
