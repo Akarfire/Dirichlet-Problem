@@ -3,7 +3,8 @@ import dirichletsolver
 import math
 from dataclasses import dataclass, field
 import streamlit as st
-import plotly.graph_objects as graph
+import plotly.graph_objects as go
+import numpy as np
 
 
 # Problem Parameters
@@ -31,226 +32,371 @@ def test_mu3(x):
 def test_mu4(x):
    return math.sin(math.pi * d * x)
 
+
+def main_f(x, y):
+   return -1 * math.exp(-1 * x * y * y)
+
+def main_mu1(y):
+   return (y - 2) * (y - 3)
+
+def main_mu2(y):
+   return y * (y - 2) * (y - 3)
+
+def main_mu3(x):
+   return (x - 1) * (x - 2)
+
+def main_mu4(x):
+   return x * (x - 1) * (x - 2)
 # ...
 
 # Simple test
-n = 4
-m = 5
-NMAX = 100
-solution = dirichletsolver.solve_seidel_method(test_f, a, b, c, d, test_mu1, test_mu2, test_mu3, test_mu4, int(n), int(m), 100)
-
-for i in solution:
-   print(i)
-
-x_step = (b - a) / n
-y_step = (d - c) / m
-errors = [[solution[i][j] - test_analytical(a + x_step * i, c + y_step * j) for i in range(n)] for j in range(m)]
-
-#print(max([max(e) for e in errors]))
+# x_step = (b - a) / n
+# y_step = (d - c) / m
+# errors = [[abs(solution[i][j] - test_analytical(a + x_step * i, c + y_step * j)) for j in range(m + 1)] for i in range(n + 1)]
 
 # STREAM LIT
 
 # Initialize session state
-# if 'data' not in st.session_state:
-#     st.session_state.data = None
+if 'data' not in st.session_state:
+    st.session_state.data = None
 
 
-# st.set_page_config(layout="wide")
-# st.title('Задача Дирихле для уравнения Пуассона')
+st.set_page_config(layout="wide")
+st.title('Задача Дирихле для уравнения Пуассона')
 
-# # Sidebar
-# with st.sidebar:
-#     st.header("Параметры")
-    
-#     # Input parameters
-#     problem_select = st.selectbox(
-#     "Выберите задачу",
-#     (
-#         "Первая тестовая",
-#         "Первая основная",
-#         "Смешанная тестовая, классич. аппрокс. ГУ",
-#         "Смешанная основная, улучш. аппрокс. ГУ")
-#     )
-    
-#     n = st.number_input("Кол-во узлов", value=5, min_value=2, step=1, key="n") - 1
-    
-#     # Build button
-#     build_button = st.button("Решить", type="primary", width='stretch')
+# Sidebar
+with st.sidebar:
+   st.header("Параметры")
+   
+   # Input parameters
+   problem_select = st.selectbox(
+   "Выберите задачу",
+   (
+      "Метод Зейделя Тестовая",
+      "Метод Зейделя Основная",
+      "Метод Верхней Релаксации Тестовая",
+      "Метод Верхней Релаксации Основная")
+   )
+   
+   n = st.number_input("Сетка n", value=5, min_value=2, step=1, key="n")
+   m = st.number_input("Сетка m", value=5, min_value=2, step=1, key="m")
+   
+   iter_max = st.number_input("Макс. Итерация", value=100, min_value=2, step=1, key="iter_max")
+   epsilon = st.number_input("Эпсилон", value=0.001, min_value=0.00000001, step=0.0001, key="epsilon", format="%.15f")
+   
+   omega = st.number_input("Омега", value=1.0, min_value=0.000000000001, max_value=2.0, step=0.01, key="omega", format="%.6f")
+   
+   # Build button
+   build_button = st.button("Решить", type="primary", width='stretch')
 
 
-# # Build button press event
-# if build_button:
+# Build button press event
+if build_button:
     
-#     problem_id = [  "Первая тестовая",
-#                     "Первая основная",
-#                     "Смешанная тестовая, классич. аппрокс. ГУ",
-#                     "Смешанная основная, улучш. аппрокс. ГУ"
-#                  ].index(problem_select)
+   problem_id = [   
+                  "Метод Зейделя Тестовая",
+                  "Метод Зейделя Основная",
+                  "Метод Верхней Релаксации Тестовая",
+                  "Метод Верхней Релаксации Основная"
+                ].index(problem_select)
     
-#     with st.spinner("Вычисляем..."):
-#         # try:
-#             if problem_id == 0:
-#                 k1 = test_k1
-#                 k2 = test_k2
-#                 q1 = test_q1
-#                 q2 = test_q2
-#                 f1 = test_f1
-#                 f2 = test_f2
-                
-#                 v_vector = boundarysolver.solve_bvp(k1, k2, q1, q2, f1, f2, ksi, mu1, mu2, int(n))
-#                 control_vector = [test_analytical(0.0 + i * (1 / n)) for i in range(n + 1)]
-#                 control_graph = control_vector
-            
-#                 control_vector = control_graph[::2]
-            
-#             error_eval_list = [abs(v_vector[i] - control_vector[i]) for i in range(n + 1)]
-            
-#             error = 0.0
-#             max_error_x = 0.0
-#             for i, e in enumerate(error_eval_list):
-#                 if e > error:
-#                     error = e
-#                     max_error_x = 0.0 + i * (1 / n)
-            
-#             # Store in session state
-#             st.session_state.data = {
-#                 'problem' : problem_id,
-#                 'n' : n,
-#                 'v_vector' : v_vector,
-#                 'control_vector' : control_vector,
-#                 'control_graph' : control_graph,
-#                 'error' : error,
-#                 'max_error_x' : max_error_x,
-#                 'error_eval_list' : error_eval_list
-#             }
-            
-#         # except Exception as e:
-#         #     st.error(f"Ошибка: {str(e)}")
-#         #     st.session_state.data = None
+   with st.spinner("Вычисляем..."):
+      x_step = (b - a) / n
+      y_step = (d - c) / m
+      
+      if problem_id == 0:
+         solution, iterations = dirichletsolver.solve_seidel_method_test(
+            test_analytical, test_f, a, b, c, d,
+            test_mu1, test_mu2, test_mu3, test_mu4,
+            n, m, iter_max, epsilon
+         )
+         control_graph = [[test_analytical(a + x_step * i, c + y_step * j) for j in range(m + 1)] for i in range(n + 1)]
+         control_values = control_graph
+         
+      if problem_id == 1:
+         solution, iterations = dirichletsolver.solve_seidel_method_main(
+            main_f, a, b, c, d,
+            main_mu1, main_mu2, main_mu3, main_mu4,
+            n, m, iter_max, epsilon
+         )
+         control_graph, c_iter = dirichletsolver.solve_seidel_method_main(
+            main_f, a, b, c, d,
+            main_mu1, main_mu2, main_mu3, main_mu4,
+            n * 2, m * 2, iter_max, epsilon
+         )
+         control_values = [row[::2] for row in control_graph[::2]]
+         
+         
+      if problem_id == 2:
+         solution, iterations = dirichletsolver.solve_relax_method_test(
+            test_analytical, test_f, a, b, c, d,
+            test_mu1, test_mu2, test_mu3, test_mu4,
+            n, m, iter_max, epsilon, omega
+         )
+         control_graph = [[test_analytical(a + x_step * i, c + y_step * j) for j in range(m + 1)] for i in range(n + 1)]
+         control_values = control_graph
+         
+      if problem_id == 3:
+         solution, iterations = dirichletsolver.solve_relax_method_main(
+            main_f, a, b, c, d,
+            main_mu1, main_mu2, main_mu3, main_mu4,
+            n, m, iter_max, epsilon, omega
+         )
+         control_graph, c_iter = dirichletsolver.solve_relax_method_main(
+            main_f, a, b, c, d,
+            main_mu1, main_mu2, main_mu3, main_mu4,
+            n * 2, m * 2, iter_max, epsilon, omega
+         )
+         control_values = [row[::2] for row in control_graph[::2]]
+         
+      
+      error_eval_list = [[None] * (m + 1) for _ in range(n + 1)]
+      for i in range(n + 1):
+         for j in range(m + 1):
+            error_eval_list[i][j] = abs(solution[i][j] - control_values[i][j])
+      
+      error = 0.0
+      max_error_i = 0
+      max_error_j = 0
+      max_error_x = 0.0
+      max_error_y = 0.0
+      for i, row in enumerate(error_eval_list):
+         for j, e in enumerate(row):
+            if e >= error:
+               error = e
+               max_error_i = i
+               max_error_j = j
+               max_error_x = a + i * x_step
+               max_error_y = c + j * y_step
+      
+      # Store in session state
+      st.session_state.data = {
+         'problem' : problem_id,
+         'n' : n,
+         'm' : m,
+         'solution' : solution,
+         'control_values' : control_values,
+         'control_graph' : control_graph,
+         'error' : error,
+         'max_error_i' : max_error_i,
+         'max_error_j' : max_error_j,
+         'max_error_x' : max_error_x,
+         'max_error_y' : max_error_y,
+         'error_eval_list' : error_eval_list,
+         'iterations' : iterations,
+         'omega' : omega
+      }
 
-# # Display plot if data is available
-# if st.session_state.data is not None:
-#     data = st.session_state.data
-#     problem = data['problem']
-#     n = data['n']
-#     v_vector = data['v_vector']
-#     control_vector = data['control_vector']
-#     control_graph = data['control_graph']
-#     error = data['error']
-#     max_error_x = data['max_error_x']
-#     error_eval_list = data['error_eval_list']
+# Display plot if data is available
+if st.session_state.data is not None:
+   data = st.session_state.data
+   problem =  data['problem']
+   n = data['n']
+   m = data['m']
+   solution = data['solution']
+   control_values = data['control_values']
+   control_graph = data['control_graph']
+   error = data['error']
+   max_error_i = data['max_error_i']
+   max_error_j = data['max_error_j']
+   max_error_x = data['max_error_x']
+   max_error_y = data['max_error_y']
+   error_eval_list = data['error_eval_list']
+   iterations = data['iterations']
+   omega = data['omega']
     
-#     # PLOT
-#     st.subheader("Графики")
-#     fig = graph.Figure()
-    
-#     fig.add_trace(graph.Scatter(
-#         x=[0 + i * (1 / (len(control_graph) - 1)) for i in range(len(control_graph))], y=control_graph, 
-#         mode='lines', 
-#         name= 'V2' if (problem == 1 or problem == 3) else 'U',
-#         line=dict(color='rgb(75, 75, 255)')
-#     ))
-    
-#     fig.add_trace(graph.Scatter(
-#         x=[0 + i * (1 / n) for i in range(n + 1)], y=v_vector, 
-#         mode='lines', 
-#         name='V',
-#         line=dict(color='rgb(255, 255, 255)')
-#     ))
-    
-#     fig.update_layout(
-#         title="Решение",
-#         xaxis_title="X",
-#         yaxis_title="Y",
-#         hovermode='closest',
-#         legend=dict(
-#             yanchor="top",
-#             y=1,
-#             xanchor="left",
-#             x=1.02,
-#             bordercolor="black",
-#             borderwidth=1
-#         )
-#     )
-    
-#     st.plotly_chart(fig, width='stretch')
-    
-#     fig = graph.Figure()
-    
-#     fig.add_trace(graph.Scatter(
-#         x=[0 + i * (1 / n) for i in range(n + 1)], y=[control_vector[i] - v_vector[i] for i in range(n + 1)], 
-#         mode='lines', 
-#         name='Error'
-#     ))
-    
-#     fig.update_layout(
-#         title="Погрешность",
-#         xaxis_title="X",
-#         yaxis_title="Y",
-#         hovermode='closest',
-#         legend=dict(
-#             yanchor="top",
-#             y=1,
-#             xanchor="left",
-#             x=1.02,
-#             bordercolor="black",
-#             borderwidth=1
-#         ),
-#         yaxis=dict(
-#             exponentformat='power', # Options: 'none', 'e', 'E', 'power', 'SI', 'B'
-#             showexponent='all'      # Options: 'none', 'all', 'first', 'last'
-#         )
-#     )
-    
-#     st.plotly_chart(fig, width='stretch')
-    
-#     # INFO
-#     st.subheader("Справка")
-    
-#     if problem == 0:
-#         st.info(f"""Для решения задачи использована равномерная сетка с числом разбиений n = {n}; \n
-# Задача должна быть решена с погрешностью не более ε = 0.5⋅10^(–6); \n
-# Задача решена с погрешностью ε1 = {error}; \n
-# Максимальное отклонение аналитического и численного решений наблюдается в точке x = {max_error_x}.
-# """)
-    
-   #  # DATA
-   #  st.subheader("Таблица")
-    
-   #  # Table data
-   #  if problem == 0 or problem == 2:
-   #      table_data = []
-   #      for i in range(n + 1):
-   #          table_data.append({
-   #              "N": i,
-   #              "X_i": 0.0 + i * (1 / n),
-   #              "U_i": control_vector[i],
-   #              "V_i": v_vector[i],
-   #              "U_i - V_i": control_vector[i] - v_vector[i],
-   #          })
-            
-   #      column_config = {
-   #          "N": st.column_config.NumberColumn(
-   #              "N"
-   #          ),
-   #          "X_i": st.column_config.NumberColumn(
-   #              "X_i",
-   #              format="%.5f"
-   #          ),
-   #          "U_i": st.column_config.NumberColumn(
-   #              "U_i",
-   #              format="%.5f"
-   #          ),
-   #          "V_i": st.column_config.NumberColumn(
-   #              "V_i",
-   #              format="%.5f"
-   #          ),
-   #          "U_i - V_i": st.column_config.NumberColumn(
-   #              "U_i - V_i",
-   #              format="%.15f"
-   #          )
-   #      }
-        
-   #      st.dataframe(table_data, width='stretch', column_config=column_config)
-        
+   # PLOT
+   
+   tab1, tab2, tab3 = st.tabs(["Численное решение", "Контрольное решение", "Погрешность"])
+
+   # Prepare coordinate grids
+   x_step = (b - a) / n
+   y_step = (d - c) / m
+   x_coords = [a + i * x_step for i in range(n + 1)]
+   y_coords = [c + j * y_step for j in range(m + 1)]
+
+   # Prepare data for plotting (note: solution is indexed as [i][j])
+   # Plotly expects z[y][x] format
+   z_solution = [[solution[i][j] for i in range(n + 1)] for j in range(m + 1)]
+   z_control = [[control_values[i][j] for i in range(n + 1)] for j in range(m + 1)]
+   z_errors = [[error_eval_list[i][j] for i in range(n + 1)] for j in range(m + 1)]
+
+   with tab1:
+      st.subheader("3D Поверхность численного решения")
+      
+      # Create 3D surface plot
+      fig_surface = go.Figure()
+      
+      # Add numerical solution surface
+      fig_surface.add_trace(go.Surface(
+         z=z_solution,
+         x=x_coords,
+         y=y_coords,
+         colorscale='Viridis',
+         name='Численное решение',
+         showscale=True,
+         colorbar=dict(title="u(x,y)")
+      ))
+      
+      # Update layout
+      fig_surface.update_layout(
+         title='Решение задачи Дирихле',
+         scene=dict(
+            xaxis_title='X',
+            yaxis_title='Y',
+            zaxis_title='V(x,y)',
+            camera=dict(
+                  eye=dict(x=1.5, y=1.5, z=1.5)
+            )
+         ),
+         width=800,
+         height=600,
+         margin=dict(l=0, r=0, b=0, t=30)
+      )
+      
+      st.plotly_chart(fig_surface, use_container_width=True)
+
+   with tab2:
+      st.subheader("3D Поверхность контроля")
+      
+      # Create 3D surface plot
+      fig_surface = go.Figure()
+      
+      # Add numerical solution surface
+      fig_surface.add_trace(go.Surface(
+         z=z_control,
+         x=x_coords,
+         y=y_coords,
+         colorscale='Viridis',
+         name='Поверхность контроля',
+         showscale=True,
+         colorbar=dict(title = "U(x,y)" if (problem == 0 or problem == 2) else "V2(x,y)")
+      ))
+      
+      # Update layout
+      fig_surface.update_layout(
+         title='Решение задачи Дирихле',
+         scene=dict(
+            xaxis_title='X',
+            yaxis_title='Y',
+            zaxis_title="U(x,y)" if (problem == 0 or problem == 2) else "V2(x,y)",
+            camera=dict(
+                  eye=dict(x=1.5, y=1.5, z=1.5)
+            )
+         ),
+         width=800,
+         height=600,
+         margin=dict(l=0, r=0, b=0, t=30)
+      )
+      
+      st.plotly_chart(fig_surface, use_container_width=True)
+
+   with tab3:
+      st.subheader("3D Поверхность погрешности")
+      
+      # Error surface plot
+      fig_error = go.Figure(data=go.Surface(
+         z=z_errors,
+         x=x_coords,
+         y=y_coords,
+         colorscale='RdYlGn_r',  # Red-Yellow-Green reversed
+         name='Погрешность',
+         colorbar=dict(title = "|V(x, y) - U(x,y)|" if (problem == 0 or problem == 2) else "|V(x, y) - V2(x,y)|")
+      ))
+      
+      # Mark the maximum error point
+      fig_error.add_trace(go.Scatter3d(
+         x=[max_error_x],
+         y=[max_error_y],
+         z=[error],
+         mode='markers',
+         marker=dict(
+            size=10,
+            color='red',
+            symbol='diamond'
+         ),
+         name=f'Макс. погрешность: {error:.2e}'
+      ))
+      
+      fig_error.update_layout(
+         title='Погрешность численного решения',
+         scene=dict(
+            xaxis_title='X',
+            yaxis_title='Y',
+            zaxis_title='Погрешность',
+            camera=dict(
+                  eye=dict(x=1.5, y=1.5, z=1.5)
+            )
+         ),
+         width=800,
+         height=600,
+         margin=dict(l=0, r=0, b=0, t=30)
+      )
+      
+      st.plotly_chart(fig_error, use_container_width=True)
+   
+   # INFO
+   st.subheader("Справка")
+   
+   #if problem == 0:
+   st.info(f"""Для решения тестовой задачи использованы сетка с числом разбиений по x
+   n = {n} и числом разбиений по y m = {m}, метод зейделя, применены критерии остановки по 
+   точности εмет = {epsilon} и по числу итераций Nmax = {iter_max}
+   На решение схемы (СЛАУ) затрачено итераций N = {iterations} и достигнута точ-
+   ность итерационного метода ε(N) = {error}
+
+   Схема (СЛАУ) решена с невязкой || R(N)|| = «___» (указать норму невязки)
+   для невязки СЛАУ использована норма «max»;
+
+   Тестовая задача должна быть решена с погрешностью не более ε = 0.5⋅10^(–6);
+   задача решена с погрешностью ε1 = {error}.
+
+   Максимальное отклонение точного и численного решений наблюдается в узле 
+   x{max_error_i} = {max_error_x}; y{max_error_j} = {max_error_y};
+   В качестве начального приближения использовано
+   «________________________________»
+   (указать, что использовано: интерполяция по x, интерполяция по y, иное)
+   """)
+   
+   # DATA
+   st.subheader("Решение")
+   
+   # Test tables
+
+   table_data = [[None] * (n + 3) for _ in range(m + 3)]
+   table_data[0] = ["", ""] + [f"x{i}" for i in range(n + 1)]
+   table_data[1] = ["", "j/i"] + [str(i) for i in range(n + 1)]
+   for j in range(2, m + 3):
+      table_data[j][0] = f"y{j - 2}"
+      table_data[j][1] = f"{j - 2}"
+      for i in range(2, n + 3):
+         table_data[j][i] = solution[i - 2][j - 2]
+
+   st.dataframe(table_data, width='stretch')
+
+   st.subheader("Точное решение" if problem == 0 or problem == 2 else "Решение с 2n, 2m")
+
+   table_data = [[None] * (len(control_graph) + 2) for _ in range(len(control_graph[0]) + 2)]
+   table_data[0] = ["", ""] + [f"x{i}" for i in range(len(control_graph))]
+   table_data[1] = ["", "i/j"] + [str(i) for i in range(len(control_graph))]
+   for j in range(2, len(control_graph[0]) + 2):
+      table_data[j][0] = f"y{j - 2}"
+      table_data[j][1] = f"{j - 2}"
+      for i in range(2, len(control_graph) + 2):
+         table_data[j][i] = control_graph[i - 2][j - 2]
+
+   st.dataframe(table_data, width='stretch')
+   
+   st.subheader("Разность точного и контрольного решения")
+   
+   table_data = [[None] * (n + 3) for _ in range(m + 3)]
+   table_data[0] = ["", ""] + [f"x{i}" for i in range(n + 1)]
+   table_data[1] = ["", "i/j"] + [str(i) for i in range(n + 1)]
+   for j in range(2, m + 3):
+      table_data[j][0] = f"y{j - 2}"
+      table_data[j][1] = f"{j - 2}"
+      for i in range(2, n + 3):
+         table_data[j][i] = error_eval_list[i - 2][j - 2]
+
+   st.dataframe(table_data, width='stretch')
    
