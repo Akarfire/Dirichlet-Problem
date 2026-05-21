@@ -48,10 +48,10 @@ private:
         }
 
         inline double relaxComputation(unsigned i, unsigned j, double x, double y, MatrixType& V) {
-                double v_new = -inv_A * (inv_x_step_sq * (V[i + 1][j] + V[i - 1][j]) + inv_y_step_sq *(V[i][j + 1] + V[i][j - 1]));
-                v_new = v_new + (1 - omega) * A * V[i][j] + omega * f(x, y);
-                v_new = v_new * inv_A;
-                return v_new;
+            return -1.0 * inv_A * ( (1 - omega) * (-1 * A) * V[i][j] + 
+                omega * (inv_x_step_sq * V[i - 1][j] + inv_x_step_sq * V[i + 1][j] 
+                       + inv_y_step_sq * V[i][j - 1] + inv_y_step_sq * V[i][j + 1]
+                       + f(x, y)));
         }
         inline double seidelComputation(unsigned i, unsigned j, double x, double y, MatrixType& V) {
                 return inv_A * (- f(x, y) - inv_x_step_sq * V[i - 1][j] - inv_x_step_sq * V[i + 1][j] - inv_y_step_sq * V[i][j - 1] - inv_y_step_sq * V[i][j + 1]);
