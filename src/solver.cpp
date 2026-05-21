@@ -25,11 +25,13 @@ std::vector<std::vector<double>> Solver::SeidelSolution::solve() {
         V[i][m] = mu4(getX(i));
     }
 
-    for (unsigned j = 1; j < m - 1; j++) {
+    for (unsigned j = 1; j < m + 1; j++) {
         V[0][j] = mu1(getY(j));
         V[n][j] = mu2(getY(j));
     }
 
+    // Seidel core
+    // TODO пока без выхода по эпсилон, надо будет добавить
     for (unsigned iteration = 1; iteration <= ITERMAX; iteration++) {
         for (unsigned j = 1; j < m; j++) {
             for (unsigned i = 1; i < n; i++) {
