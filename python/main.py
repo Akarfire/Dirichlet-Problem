@@ -6,6 +6,25 @@ import streamlit as st
 import plotly.graph_objects as go
 import numpy as np
 
+def calculate_residual(numerical_solution : list[list[float]], f : callable, a, b, c, d, n : int, m : int) -> list[list[float]]:
+   residual = []
+   residual.append([0 for j in range(0, m + 1)])
+   h = (b - a) / n
+   k = (d - c) / m
+   inv_h_sq = 1 / h**2
+   inv_k_sq = 1 / k**2
+   for i in range(1, n):
+      residual.append([0])
+      for j in range(1, m):
+         residual[i].append(0)
+         residual[i][j] = inv_h_sq * (numerical_solution[i + 1][j] - 2 * numerical_solution[i][j] + numerical_solution[i - 1][j])
+         residual[i][j] += inv_k_sq * (numerical_solution[i][j + 1] - 2 * numerical_solution[i][j] + numerical_solution[i][j - 1])
+         residual[i][j] += f(a + i * h, c + j * k)
+      residual[i].append(0)
+   residual.append([0 for j in range(0, m + 1)])
+
+   return residual
+
 
 # Problem Parameters
 a = 1.0
@@ -81,10 +100,12 @@ with st.sidebar:
    n = st.number_input("Сетка n", value=5, min_value=2, step=1, key="n")
    m = st.number_input("Сетка m", value=5, min_value=2, step=1, key="m")
    
-   iter_max = st.number_input("Макс. Итерация", value=100, min_value=2, step=1, key="iter_max")
-   epsilon = st.number_input("Эпсилон", value=0.001, min_value=0.00000001, step=0.0001, key="epsilon", format="%.15f")
+   iter_max = st.number_input("Макс. Итерация", value=10000, min_value=2, step=1, key="iter_max")
+   epsilon = st.number_input("Эпсилон", value=1e-7, min_value=1e-15, step=0.0001, key="epsilon", format="%g")
    
-   omega = st.number_input("Омега", value=1.0, min_value=0.000000000001, max_value=2.0, step=0.01, key="omega", format="%.6f")
+   omega = 0.0
+   if problem_select == "Метод Верхней Релаксации Тестовая" or problem_select == "Метод Верхней Релаксации Основная":
+      omega = st.number_input("Омега", value=1.87, min_value=0.000000000001, max_value=2.0, step=0.01, key="omega", format="%g")
    
    # Build button
    build_button = st.button("Решить", type="primary", width='stretch')
@@ -105,8 +126,8 @@ if build_button:
       y_step = (d - c) / m
       
       if problem_id == 0:
-         solution, iterations = dirichletsolver.solve_seidel_method_test(
-            test_analytical, test_f, a, b, c, d,
+         solution, iterations = dirichletsolver.solve_seidel_method_main(
+            test_f, a, b, c, d,
             test_mu1, test_mu2, test_mu3, test_mu4,
             n, m, iter_max, epsilon
          )
@@ -128,8 +149,8 @@ if build_button:
          
          
       if problem_id == 2:
-         solution, iterations = dirichletsolver.solve_relax_method_test(
-            test_analytical, test_f, a, b, c, d,
+         solution, iterations = dirichletsolver.solve_relax_method_main(
+            test_f, a, b, c, d,
             test_mu1, test_mu2, test_mu3, test_mu4,
             n, m, iter_max, epsilon, omega
          )
@@ -338,25 +359,91 @@ if st.session_state.data is not None:
    # INFO
    st.subheader("Справка")
    
-   #if problem == 0:
-   st.info(f"""Для решения тестовой задачи использованы сетка с числом разбиений по x
-   n = {n} и числом разбиений по y m = {m}, метод зейделя, применены критерии остановки по 
-   точности εмет = {epsilon} и по числу итераций Nmax = {iter_max}
-   На решение схемы (СЛАУ) затрачено итераций N = {iterations} и достигнута точ-
-   ность итерационного метода ε(N) = {error}
+   if problem == 0 or problem == 2:
+         residual = max([max(row) for row in calculate_residual(solution, test_f, a, b, c, d, n, m)])
+         
+   if problem == 1 or problem == 3:
+      residual = max([max(row) for row in calculate_residual(solution, main_f, a, b, c, d, n, m)])
+   
+   if problem == 0:
+      st.info(f"""
+      Для решения тестовой задачи использованы сетка с числом разбиений по x
+      n = {n} и числом разбиений по y m = {m}, метод Зейделя, применены критерии остановки по 
+      точности εмет = {epsilon} и по числу итераций Nmax = {iter_max}
+      На решение схемы (СЛАУ) затрачено итераций N = {iterations} и достигнута точность 
+      итерационного метода ε(N) = {error}
 
-   Схема (СЛАУ) решена с невязкой || R(N)|| = «___» (указать норму невязки)
-   для невязки СЛАУ использована норма «max»;
+      Схема (СЛАУ) решена с невязкой ||R(N)|| = {residual}
+      для невязки СЛАУ использована норма «max»;
 
-   Тестовая задача должна быть решена с погрешностью не более ε = 0.5⋅10^(–6);
-   задача решена с погрешностью ε1 = {error}.
+      Тестовая задача должна быть решена с погрешностью не более ε = 0.5⋅10^(–6);
+      задача решена с погрешностью ε1 = {error}.
 
-   Максимальное отклонение точного и численного решений наблюдается в узле 
-   x{max_error_i} = {max_error_x}; y{max_error_j} = {max_error_y};
-   В качестве начального приближения использовано
-   «________________________________»
-   (указать, что использовано: интерполяция по x, интерполяция по y, иное)
-   """)
+      Максимальное отклонение точного и численного решений наблюдается в узле 
+      x{max_error_i} = {max_error_x}; y{max_error_j} = {max_error_y};
+      В качестве начального приближения использовано
+      «Билинейная интерполяция по X, Y».
+      """)
+      
+   if problem == 1:
+      st.info(f"""
+      Для решения основной задачи использованы сетка с числом разбиений по x
+      n = {n} и числом разбиений по y m = {m}, метод Зейделя, применены критерии остановки по 
+      точности εмет = {epsilon} и по числу итераций Nmax = {iter_max}
+      На решение схемы (СЛАУ) затрачено итераций N = {iterations} и достигнута точность 
+      итерационного метода ε(N) = {error}
+
+      Схема (СЛАУ) решена с невязкой ||R(N)|| = {residual}
+      для невязки СЛАУ использована норма «max»;
+
+      Тестовая задача должна быть решена с погрешностью не более ε = 0.5⋅10^(–6);
+      задача решена с погрешностью ε1 = {error}.
+
+      Максимальное отклонение точного и численного решений наблюдается в узле 
+      x{max_error_i} = {max_error_x}; y{max_error_j} = {max_error_y};
+      В качестве начального приближения использовано
+      «Билинейная интерполяция по X, Y».
+      """)
+      
+   if problem == 2:
+      st.info(f"""
+      Для решения тестовой задачи использованы сетка с числом разбиений по x
+      n = {n} и числом разбиений по y m = {m}, метод Верхней Релаксации с параметром ω = {omega}, применены критерии остановки по 
+      точности εмет = {epsilon} и по числу итераций Nmax = {iter_max}
+      На решение схемы (СЛАУ) затрачено итераций N = {iterations} и достигнута точность 
+      итерационного метода ε(N) = {error}
+
+      Схема (СЛАУ) решена с невязкой ||R(N)|| = {residual}
+      для невязки СЛАУ использована норма «max»;
+
+      Тестовая задача должна быть решена с погрешностью не более ε = 0.5⋅10^(–6);
+      задача решена с погрешностью ε1 = {error}.
+
+      Максимальное отклонение точного и численного решений наблюдается в узле 
+      x{max_error_i} = {max_error_x}; y{max_error_j} = {max_error_y};
+      В качестве начального приближения использовано
+      «Билинейная интерполяция по X, Y».
+      """)
+      
+   if problem == 3:
+      st.info(f"""
+      Для решения основной задачи использованы сетка с числом разбиений по x
+      n = {n} и числом разбиений по y m = {m}, метод Верхней Релаксации с параметром ω = {omega}, применены критерии остановки по 
+      точности εмет = {epsilon} и по числу итераций Nmax = {iter_max}
+      На решение схемы (СЛАУ) затрачено итераций N = {iterations} и достигнута точность 
+      итерационного метода ε(N) = {error}
+      
+      Схема (СЛАУ) решена с невязкой ||R(N)|| = {residual}
+      для невязки СЛАУ использована норма «max»;
+
+      Тестовая задача должна быть решена с погрешностью не более ε = 0.5⋅10^(–6);
+      задача решена с погрешностью ε1 = {error}.
+
+      Максимальное отклонение точного и численного решений наблюдается в узле 
+      x{max_error_i} = {max_error_x}; y{max_error_j} = {max_error_y};
+      В качестве начального приближения использовано
+      «Билинейная интерполяция по X, Y».
+      """)
    
    # DATA
    st.subheader("Решение")
