@@ -16,7 +16,6 @@ class Solver final
 {
 private:
     Solver() {}
-
     
 public:
     // Static solver methods
@@ -30,9 +29,9 @@ public:
                                                  unsigned n, unsigned m,
                                                  unsigned NMAX, double epsilon)
     {
-        SeidelSolution<AnalyticalErrorEvaluation, GridInitializationInterpolationXY> Solution(f, a, b, c, d, mu1, mu2, mu3, mu4, n, m, NMAX,
-            std::make_shared<AnalyticalErrorEvaluation>(epsilon, analytical));
-        
+        SeidelSolution<AnalyticalErrorEvaluation, GridInitializationInterpolationXY> Solution(f, a, b, c, d, mu1, mu2, mu3, mu4, n, m, NMAX);
+        Solution.setupErrorEvaluation(epsilon, analytical);
+
         return Solution.solve();
     }
     
@@ -45,8 +44,9 @@ public:
                                                  unsigned n, unsigned m,
                                                  unsigned NMAX, double epsilon)
     {
-        SeidelSolution<HeuristicErrorEvaluation, GridInitializationInterpolationXY> Solution(f, a, b, c, d, mu1, mu2, mu3, mu4, n, m, NMAX,
-            std::make_shared<HeuristicErrorEvaluation>(epsilon));
+        SeidelSolution<HeuristicErrorEvaluation, GridInitializationInterpolationXY> Solution(f, a, b, c, d, mu1, mu2, mu3, mu4, n, m, NMAX);
+        Solution.setupErrorEvaluation(epsilon);
+
         return Solution.solve();
     }     
 
@@ -59,8 +59,9 @@ public:
                                                 unsigned n, unsigned m,
                                                 unsigned NMAX, double epsilon, double omega)
     {
-        RelaxSolution<AnalyticalErrorEvaluation, GridInitializationInterpolationXY> Solution(f, a, b, c, d, mu1, mu2, mu3, mu4, n, m, NMAX,
-            std::make_shared<AnalyticalErrorEvaluation>(epsilon, analytical), omega);
+        RelaxSolution<AnalyticalErrorEvaluation, GridInitializationInterpolationXY> Solution(f, a, b, c, d, mu1, mu2, mu3, mu4, n, m, NMAX, omega);
+        Solution.setupErrorEvaluation(epsilon, analytical);
+
         return Solution.solve();
     }
                                                  
@@ -73,8 +74,8 @@ public:
                                                  unsigned n, unsigned m,
                                                  unsigned NMAX, double epsilon, double omega)
     {
-        RelaxSolution<HeuristicErrorEvaluation, GridInitializationInterpolationXY> Solution(f, a, b, c, d, mu1, mu2, mu3, mu4, n, m, NMAX,
-            std::make_shared<HeuristicErrorEvaluation>(epsilon), omega);
+        RelaxSolution<HeuristicErrorEvaluation, GridInitializationInterpolationXY> Solution(f, a, b, c, d, mu1, mu2, mu3, mu4, n, m, NMAX, omega);
+        Solution.setupErrorEvaluation(epsilon);
 
         return Solution.solve();
     }
