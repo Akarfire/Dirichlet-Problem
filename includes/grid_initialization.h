@@ -59,13 +59,21 @@ public:
         unsigned n = grid.size() - 1;
         unsigned m = grid[0].size() - 1;
 
-        for (unsigned i = 1; i < n; i++)
-            for (unsigned j = 1; j < m; j++)
-            {
-                double x_interpolation = grid[0][j] + i * (grid[n][j] - grid[0][j]) / n;
-                double y_interpolation = grid[i][0] + j * (grid[i][m] - grid[i][0]) / m;
+        const double inv_n = 1.0 / n;
+        const double inv_m = 1.0 / m;
 
-                grid[i][j] = (x_interpolation + y_interpolation) / 2.0;
+        for (unsigned i = 1; i < n; i++) {
+            const double alpha = i * inv_n;
+            const double one_minus_alpha = 1.0 - alpha;
+            double* row_i = grid[i].data();
+            
+            for (unsigned j = 1; j < m; j++) {
+                const double beta = j * inv_m;
+                const double one_minus_beta = 1.0 - beta;
+                
+                row_i[j] = one_minus_beta * (one_minus_alpha * grid[0][0] + alpha * grid[n][0]) +
+                            beta * (one_minus_alpha * grid[0][m] + alpha * grid[n][m]);
             }
+        }
     }
 };
