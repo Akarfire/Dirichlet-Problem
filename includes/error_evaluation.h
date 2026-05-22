@@ -5,11 +5,8 @@
 
 class ErrorEvaluation
 {
-protected:
-    double epsilon;
-
 public:
-    ErrorEvaluation(double epsilon_) : epsilon(epsilon_) {}
+    ErrorEvaluation() {}
     virtual ~ErrorEvaluation() {}
 
     // Implement this in derived classes
@@ -25,7 +22,7 @@ public:
 class NoErrorEvaluation final : public ErrorEvaluation
 {
 public:
-    NoErrorEvaluation(double epsilon_) : ErrorEvaluation(epsilon_) {}
+    NoErrorEvaluation() : ErrorEvaluation() {}
     virtual ~NoErrorEvaluation() {}
 
     void cacheOld(double old_value, double x, double y) {}
@@ -38,13 +35,13 @@ public:
 
 class AnalyticalErrorEvaluation final : public ErrorEvaluation
 {
+    double epsilon;
     std::function<double(double, double)> analytical;
-    
     double maxError;
 
 public:
     AnalyticalErrorEvaluation(double epsilon_, std::function<double(double, double)> analyticalSolution) : 
-        ErrorEvaluation(epsilon_), analytical(analyticalSolution) {}
+        ErrorEvaluation(), epsilon(epsilon_), analytical(analyticalSolution) {}
     virtual ~AnalyticalErrorEvaluation() {}
 
     void cacheOld(double old_value, double x, double y) {}
@@ -68,12 +65,14 @@ public:
 
 class HeuristicErrorEvaluation : public ErrorEvaluation
 {
+    double epsilon;
+
     double cachedOld = 0.0;
     double maxError = 0.0;
 
 public:
     HeuristicErrorEvaluation(double epsilon_) : 
-        ErrorEvaluation(epsilon_) {}
+        ErrorEvaluation(), epsilon(epsilon_) {}
     virtual ~HeuristicErrorEvaluation() {}
 
     // Implement this in derived classes
