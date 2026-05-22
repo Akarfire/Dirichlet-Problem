@@ -7,10 +7,9 @@
 #include "types.h"
 
 template<class ErrorEvaluationType, class GridInitializationType, class Derived>
-class Solution 
+class Solution : public ErrorEvaluationType
 {
 protected:
-    std::shared_ptr<ErrorEvaluationType> errorEval;
     FFuncType f;
     double a, b;
     double c, d;
@@ -43,9 +42,9 @@ public:
                 BoundaryFuncType mu1_, BoundaryFuncType mu2_, 
                 BoundaryFuncType mu3_, BoundaryFuncType mu4_,
                 unsigned n_, unsigned m_,
-                unsigned ITERMAX_, std::shared_ptr<ErrorEvaluationType> errorEvaluation, double omega_ = 1.0) : 
+                unsigned ITERMAX_, double omega_ = 1.0) : 
                 f(f_), a(a_), b(b_), c(c_), d(d_), mu1(mu1_), mu2(mu2_), mu3(mu3_), mu4(mu4_), n(n_), m(m_), 
-                ITERMAX(ITERMAX_), errorEval(errorEvaluation) {}
+                ITERMAX(ITERMAX_) {}
 
     std::tuple<Matrix2DType, unsigned> solve()
     {
@@ -86,15 +85,15 @@ public:
                     double x = getX(i);
                     double y = getY(j);
                     
-                    errorEval->cacheOld(V[index(i, j, m)], x, y);
+                    this->ErrorEvaluationType::cacheOld(V[index(i, j, m)], x, y);
 
                     V[index(i, j, m)] = compute(i, j, x, y, V);
 
-                    errorEval->evaluateNew(V[index(i, j, m)], x, y);
+                    this->ErrorEvaluationType::evaluateNew(V[index(i, j, m)], x, y);
                 }
             }
 
-            if (!errorEval->getEvaluationResult())
+            if (!this->ErrorEvaluationType::getEvaluationResult())
                 break;
         }
 
@@ -120,8 +119,8 @@ public:
                 BoundaryFuncType mu1_, BoundaryFuncType mu2_, 
                 BoundaryFuncType mu3_, BoundaryFuncType mu4_,
                 unsigned n_, unsigned m_,
-                unsigned ITERMAX_, std::shared_ptr<ErrorEvaluationType> errorEvaluation) : 
-                Solution<ErrorEvaluationType, GridInitializationType, SeidelSolution>(f_, a_, b_, c_, d_, mu1_, mu2_, mu3_, mu4_, n_, m_, ITERMAX_, errorEvaluation) {}
+                unsigned ITERMAX_) : 
+                Solution<ErrorEvaluationType, GridInitializationType, SeidelSolution>(f_, a_, b_, c_, d_, mu1_, mu2_, mu3_, mu4_, n_, m_, ITERMAX_) {}
 };
 
 
@@ -145,6 +144,6 @@ public:
                 BoundaryFuncType mu1_, BoundaryFuncType mu2_, 
                 BoundaryFuncType mu3_, BoundaryFuncType mu4_,
                 unsigned n_, unsigned m_,
-                unsigned ITERMAX_, std::shared_ptr<ErrorEvaluationType> errorEvaluation, double omega_) : 
-                Solution<ErrorEvaluationType, GridInitializationType, RelaxSolution>(f_, a_, b_, c_, d_, mu1_, mu2_, mu3_, mu4_, n_, m_, ITERMAX_, errorEvaluation), omega(omega_) {}
+                unsigned ITERMAX_, double omega_) : 
+                Solution<ErrorEvaluationType, GridInitializationType, RelaxSolution>(f_, a_, b_, c_, d_, mu1_, mu2_, mu3_, mu4_, n_, m_, ITERMAX_), omega(omega_) {}
 };
