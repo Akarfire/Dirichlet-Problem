@@ -5,11 +5,11 @@
 #include <memory>
 
 #include "error_evaluation.h"
+#include "grid_initialization.h"
 
 using FFuncType = std::function<double(double, double)>;
 using BoundaryFuncType = std::function<double(double)>;
 using MatrixType = std::vector<std::vector<double>>;
-
 
 class Solver final
 {
@@ -21,7 +21,7 @@ private:
         Relax
     };
 
-    template<Method method, class ErrorEvaluationType>
+    template<Method method, class ErrorEvaluationType, class GridInitializationType>
     class Solution 
     {
     private:
@@ -48,10 +48,10 @@ private:
         }
 
         inline double relaxComputation(unsigned i, unsigned j, double x, double y, MatrixType& V) {
-                double v_new = -inv_A * (inv_x_step_sq * (V[i + 1][j] + V[i - 1][j]) + inv_y_step_sq *(V[i][j + 1] + V[i][j - 1]));
-                v_new = v_new + (1 - omega) * A * V[i][j] + omega * f(x, y);
-                v_new = v_new * inv_A;
-                return v_new;
+            return -1.0 * inv_A * ( (1 - omega) * (-1 * A) * V[i][j] + 
+                omega * (inv_x_step_sq * V[i - 1][j] + inv_x_step_sq * V[i + 1][j] 
+                       + inv_y_step_sq * V[i][j - 1] + inv_y_step_sq * V[i][j + 1]
+                       + f(x, y)));
         }
         inline double seidelComputation(unsigned i, unsigned j, double x, double y, MatrixType& V) {
                 return inv_A * (- f(x, y) - inv_x_step_sq * V[i - 1][j] - inv_x_step_sq * V[i + 1][j] - inv_y_step_sq * V[i][j - 1] - inv_y_step_sq * V[i][j + 1]);
@@ -90,6 +90,8 @@ private:
                 V[0][j] = mu1(getY(j));
                 V[n][j] = mu2(getY(j));
             }
+
+            GridInitializationType::initialize(V);
 
             unsigned iteration = 1;
 
@@ -131,11 +133,11 @@ public:
                                                  unsigned n, unsigned m,
                                                  unsigned NMAX, double epsilon)
     {
-        Solution<Method::Seidel, AnalyticalErrorEvaluation> Solution(f, a, b, c, d, mu1, mu2, mu3, mu4, n, m, NMAX,
+        Solution<Method::Seidel, AnalyticalErrorEvaluation, GridInitializationInterpolationXY> Solution(f, a, b, c, d, mu1, mu2, mu3, mu4, n, m, NMAX,
             std::make_shared<AnalyticalErrorEvaluation>(epsilon, analytical));
         return Solution.solve();
     }
-                                                 
+    
     static std::tuple<MatrixType, unsigned> solveSeidelMethodMain(
                                                  FFuncType f,
                                                  double a, double b, 
@@ -145,21 +147,21 @@ public:
                                                  unsigned n, unsigned m,
                                                  unsigned NMAX, double epsilon)
     {
-        Solution<Method::Seidel, HeuristicErrorEvaluation> Solution(f, a, b, c, d, mu1, mu2, mu3, mu4, n, m, NMAX,
+        Solution<Method::Seidel, HeuristicErrorEvaluation, GridInitializationInterpolationXY> Solution(f, a, b, c, d, mu1, mu2, mu3, mu4, n, m, NMAX,
             std::make_shared<HeuristicErrorEvaluation>(epsilon));
         return Solution.solve();
-    }
+    }     
 
     static std::tuple<MatrixType, unsigned> solveRelaxMethodTest(
-                                                 FFuncType analytical, FFuncType f,
-                                                 double a, double b, 
-                                                 double c, double d,
-                                                 BoundaryFuncType mu1, BoundaryFuncType mu2, 
-                                                 BoundaryFuncType mu3, BoundaryFuncType mu4,
-                                                 unsigned n, unsigned m,
-                                                 unsigned NMAX, double epsilon, double omega)
+                                                FFuncType analytical, FFuncType f,
+                                                double a, double b, 
+                                                double c, double d,
+                                                BoundaryFuncType mu1, BoundaryFuncType mu2, 
+                                                BoundaryFuncType mu3, BoundaryFuncType mu4,
+                                                unsigned n, unsigned m,
+                                                unsigned NMAX, double epsilon, double omega)
     {
-        Solution<Method::Relax, AnalyticalErrorEvaluation> Solution(f, a, b, c, d, mu1, mu2, mu3, mu4, n, m, NMAX,
+        Solution<Method::Relax, AnalyticalErrorEvaluation, GridInitializationInterpolationXY> Solution(f, a, b, c, d, mu1, mu2, mu3, mu4, n, m, NMAX,
             std::make_shared<AnalyticalErrorEvaluation>(epsilon, analytical), omega);
         return Solution.solve();
     }
@@ -173,7 +175,7 @@ public:
                                                  unsigned n, unsigned m,
                                                  unsigned NMAX, double epsilon, double omega)
     {
-        Solution<Method::Relax, HeuristicErrorEvaluation> Solution(f, a, b, c, d, mu1, mu2, mu3, mu4, n, m, NMAX,
+        Solution<Method::Relax, HeuristicErrorEvaluation, GridInitializationInterpolationXY> Solution(f, a, b, c, d, mu1, mu2, mu3, mu4, n, m, NMAX,
             std::make_shared<HeuristicErrorEvaluation>(epsilon), omega);
         return Solution.solve();
     }
