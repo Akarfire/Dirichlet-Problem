@@ -58,15 +58,7 @@ public:
 
         MatrixType V((n + 1) * (m + 1));
 
-        for (unsigned i = 0; i < n + 1; i++) {
-            V[index(i, 0, m)] = mu3(getX(i)); 
-            V[index(i, m, m)] = mu4(getX(i));
-        }
-
-        for (unsigned j = 1; j < m + 1; j++) {
-            V[index(0, j, m)] = mu1(getY(j));
-            V[index(n, j, m)] = mu2(getY(j));
-        }
+        GridInitializationType::initialize(V, a, b, c, d, mu1, mu2, mu3, mu4, n, m);
 
         f_cache.resize((n + 1) * (m + 1));
         for (unsigned i = 1; i < n; i++) {
@@ -74,8 +66,6 @@ public:
                 f_cache[index(i, j, m)] = f(getX(i), getY(j));
             }
         }
-
-        GridInitializationType::initialize(V, n, m);
 
         unsigned iteration = 1;
 
