@@ -5,51 +5,56 @@
 
 class ErrorEvaluation
 {
-protected:
-    double epsilon;
-
 public:
-    ErrorEvaluation(double epsilon_) : epsilon(epsilon_) {}
+    ErrorEvaluation() {}
     virtual ~ErrorEvaluation() {}
 
     // Implement this in derived classes
 
-    // void cacheOld(double old_value, double x, double y) { ... }
-    // void evaluateNew(double new_value, double x, double y) { ... }
+    // void setupErrorEvaluation(...) { ... } (optional)
+
+    // inline void cacheOld(double old_value, double x, double y) { ... }
+    // inline void evaluateNew(double new_value, double x, double y) { ... }
 
     // // Should calculations continue or not
-    // bool getEvaluationResult() { ... }
+    // inline bool getEvaluationResult() { ... }
 };
 
 
-class NoErrorEvaluation final : public ErrorEvaluation
+class NoErrorEvaluation : public ErrorEvaluation
 {
 public:
-    NoErrorEvaluation(double epsilon_) : ErrorEvaluation(epsilon_) {}
+    NoErrorEvaluation() : ErrorEvaluation() {}
     virtual ~NoErrorEvaluation() {}
 
-    void cacheOld(double old_value, double x, double y) {}
-    void evaluateNew(double new_value, double x, double y) {}
+    inline void cacheOld(double old_value, double x, double y) {}
+    inline void evaluateNew(double new_value, double x, double y) {}
 
     // Should calculations continue or not
-    bool getEvaluationResult() { return true; }
+    inline bool getEvaluationResult() { return true; }
 };
 
 
-class AnalyticalErrorEvaluation final : public ErrorEvaluation
+class AnalyticalErrorEvaluation : public ErrorEvaluation
 {
+protected:
+    double epsilon = 0.0;
     std::function<double(double, double)> analytical;
-    
     double maxError;
 
 public:
-    AnalyticalErrorEvaluation(double epsilon_, std::function<double(double, double)> analyticalSolution) : 
-        ErrorEvaluation(epsilon_), analytical(analyticalSolution) {}
+    AnalyticalErrorEvaluation() : ErrorEvaluation() {}
     virtual ~AnalyticalErrorEvaluation() {}
 
-    void cacheOld(double old_value, double x, double y) {}
+    void setupErrorEvaluation(double epsilon_, std::function<double(double, double)> analyticalSolution)
+    {
+        epsilon = epsilon_;
+        analytical = analyticalSolution;
+    }
 
-    void evaluateNew(double new_value, double x, double y) 
+    inline void cacheOld(double old_value, double x, double y) {}
+
+    inline void evaluateNew(double new_value, double x, double y) 
     { 
         double error = abs(analytical(x, y) - new_value);
         if (error > maxError)
@@ -57,28 +62,38 @@ public:
     }
 
     // Should calculations continue or not
-    bool getEvaluationResult() { return maxError > epsilon; }
+    inline bool getEvaluationResult() 
+    { 
+        bool result =  maxError > epsilon; 
+        maxError = 0.0;
+        return result;
+    }
 };
 
 
 class HeuristicErrorEvaluation : public ErrorEvaluation
 {
+protected:
+    double epsilon = 0.0;
+
     double cachedOld = 0.0;
     double maxError = 0.0;
 
 public:
-    HeuristicErrorEvaluation(double epsilon_) : 
-        ErrorEvaluation(epsilon) {}
+    HeuristicErrorEvaluation() : ErrorEvaluation() {}
     virtual ~HeuristicErrorEvaluation() {}
 
-    // Implement this in derived classes
+    void setupErrorEvaluation(double epsilon_)
+    {
+        epsilon = epsilon_;
+    }
 
-    void cacheOld(double old_value, double x, double y) 
+    inline void cacheOld(double old_value, double x, double y) 
     {
         cachedOld = old_value;
     }
 
-    void evaluateNew(double new_value, double x, double y) 
+    inline void evaluateNew(double new_value, double x, double y) 
     {
         double delta = abs(new_value - cachedOld);
         if (delta > maxError)
@@ -86,5 +101,10 @@ public:
     }
 
     // Should calculations continue or not
-    bool getEvaluationResult() { return maxError > epsilon; }
+    inline bool getEvaluationResult() 
+    { 
+        bool result = maxError > epsilon; 
+        maxError = 0.0;
+        return result;
+    }
 };
