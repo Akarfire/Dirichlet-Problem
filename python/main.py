@@ -222,6 +222,9 @@ if build_button:
          'iterations' : iterations,
          'c_iterations' : c_iterations,
          'omega' : omega,
+         'omega_2' : omega_2,
+         'epsilon' : epsilon,
+         'epsilon_2' : epsilon_2,
          'epsilon_n' : epsilon_n,
          'c_epsilon_n' : c_epsilon_n,
          'initial_approximation' : initial_approximation
@@ -245,7 +248,11 @@ if st.session_state.data is not None:
    iterations = data['iterations']
    c_iterations = data['c_iterations']
    omega = data['omega']
+   oemga_2 = data['omega_2']
+   epsilon = data['epsilon']
+   epsilon_2 = data['epsilon_2']
    epsilon_n = data['epsilon_n']
+   c_epsilon_n = data['c_epsilon_n']
    initial_approximation = data['initial_approximation']
     
    # PLOT
