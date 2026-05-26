@@ -42,6 +42,8 @@ protected:
     std::function<double(double, double)> analytical;
     double maxError;
 
+    double lastStepError = 0.0;
+
 public:
     AnalyticalErrorEvaluation() : ErrorEvaluation() {}
     virtual ~AnalyticalErrorEvaluation() {}
@@ -64,10 +66,13 @@ public:
     // Should calculations continue or not
     inline bool getEvaluationResult() 
     { 
-        bool result =  maxError > epsilon; 
+        bool result =  maxError > epsilon;
+        lastStepError = maxError;
         maxError = 0.0;
         return result;
     }
+
+    inline double getLastStepError() { return lastStepError; }
 };
 
 
@@ -78,6 +83,8 @@ protected:
 
     double cachedOld = 0.0;
     double maxError = 0.0;
+
+    double lastStepError = 0.0;
 
 public:
     HeuristicErrorEvaluation() : ErrorEvaluation() {}
@@ -104,7 +111,10 @@ public:
     inline bool getEvaluationResult() 
     { 
         bool result = maxError > epsilon; 
+        lastStepError = maxError;
         maxError = 0.0;
         return result;
     }
+
+    inline double getLastStepError() { return lastStepError; }
 };
