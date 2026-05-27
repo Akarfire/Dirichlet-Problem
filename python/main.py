@@ -425,15 +425,14 @@ if st.session_state.data is not None:
    st.subheader("Справка")
    
    if problem == 0 or problem == 2:
-      residual = max([max(row) for row in calculate_residual(solution, test_f, a, b, c, d, n, m)])
-      residual_init = max([max(row) for row in calculate_residual(initial_approximation, test_f, a, b, c, d, n, m)])
+      residual = max(abs(v) for row in calculate_residual(solution, test_f, a, b, c, d, n, m) for v in row)
+      residual_init = max(abs(v) for row in calculate_residual(initial_approximation, test_f, a, b, c, d, n, m) for v in row)
       
          
    if problem == 1 or problem == 3:
-      residual = max([max(row) for row in calculate_residual(solution, main_f, a, b, c, d, n, m)])
-      residual_2 = max([max(row) for row in calculate_residual(control_graph, main_f, a, b, c, d, n * 2, m * 2)])
-      residual_init = max([max(row) for row in calculate_residual(initial_approximation, main_f, a, b, c, d, n, m)])
-      
+      residual = max(abs(v) for row in calculate_residual(solution, main_f, a, b, c, d, n, m) for v in row)
+      residual_2 = max(abs(v) for row in calculate_residual(control_graph, main_f, a, b, c, d, n * 2, m * 2) for v in row)
+      residual_init = max(abs(v) for row in calculate_residual(initial_approximation, main_f, a, b, c, d, n, m) for v in row)
    
    if problem == 0:
       st.info(f"""
