@@ -103,9 +103,17 @@ with st.sidebar:
    iter_max = st.number_input("Макс. Итерация", value=10000, min_value=2, step=1, key="iter_max")
    epsilon = st.number_input("Эпсилон", value=1e-7, min_value=1e-15, step=0.0001, key="epsilon", format="%g")
    
+   epsilon_2 = 0.0
+   if problem_select == "Метод Зейделя Основная" or problem_select == "Метод Верхней Релаксации Основная":
+      epsilon_2 = st.number_input("Эпсилон для контрольного решения", value=1e-9, min_value=1e-15, step=0.0001, key="epsilon_2", format="%g")
+   
    omega = 0.0
    if problem_select == "Метод Верхней Релаксации Тестовая" or problem_select == "Метод Верхней Релаксации Основная":
       omega = st.number_input("Омега", value=1.87, min_value=0.000000000001, max_value=2.0, step=0.01, key="omega", format="%g")
+      
+   omega_2 = 0.0
+   if (problem_select == "Метод Верхней Релаксации Основная"):
+      omega_2 = st.number_input("Омега для контрольного решения", value=1.9, min_value=0.000000000001, max_value=2.0, step=0.01, key="omega_2", format="%g")
    
    # Build button
    build_button = st.button("Решить", type="primary", width='stretch')
@@ -125,8 +133,12 @@ if build_button:
       x_step = (b - a) / n
       y_step = (d - c) / m
       
+      c_iterations = 0
+      c_epsilon_n = 0.0
+      
       if problem_id == 0:
-         solution, iterations = dirichletsolver.solve_seidel_method_main(
+         initial_approximation = dirichletsolver.get_initial_approximation(a, b, c, d, test_mu1, test_mu2, test_mu3, test_mu4, n, m)
+         solution, iterations, epsilon_n = dirichletsolver.solve_seidel_method_main(
             test_f, a, b, c, d,
             test_mu1, test_mu2, test_mu3, test_mu4,
             n, m, iter_max, epsilon
@@ -135,21 +147,23 @@ if build_button:
          control_values = control_graph
          
       if problem_id == 1:
-         solution, iterations = dirichletsolver.solve_seidel_method_main(
+         initial_approximation = dirichletsolver.get_initial_approximation(a, b, c, d, main_mu1, main_mu2, main_mu3, main_mu4, n, m)
+         solution, iterations, epsilon_n = dirichletsolver.solve_seidel_method_main(
             main_f, a, b, c, d,
             main_mu1, main_mu2, main_mu3, main_mu4,
             n, m, iter_max, epsilon
          )
-         control_graph, c_iter = dirichletsolver.solve_seidel_method_main(
+         control_graph, c_iterations, c_epsilon_n = dirichletsolver.solve_seidel_method_main(
             main_f, a, b, c, d,
             main_mu1, main_mu2, main_mu3, main_mu4,
-            n * 2, m * 2, iter_max, epsilon
+            n * 2, m * 2, iter_max, epsilon_2
          )
          control_values = [row[::2] for row in control_graph[::2]]
          
          
       if problem_id == 2:
-         solution, iterations = dirichletsolver.solve_relax_method_main(
+         initial_approximation = dirichletsolver.get_initial_approximation(a, b, c, d, test_mu1, test_mu2, test_mu3, test_mu4, n, m)
+         solution, iterations, epsilon_n = dirichletsolver.solve_relax_method_main(
             test_f, a, b, c, d,
             test_mu1, test_mu2, test_mu3, test_mu4,
             n, m, iter_max, epsilon, omega
@@ -158,15 +172,16 @@ if build_button:
          control_values = control_graph
          
       if problem_id == 3:
-         solution, iterations = dirichletsolver.solve_relax_method_main(
+         initial_approximation = dirichletsolver.get_initial_approximation(a, b, c, d, main_mu1, main_mu2, main_mu3, main_mu4, n, m)
+         solution, iterations, epsilon_n = dirichletsolver.solve_relax_method_main(
             main_f, a, b, c, d,
             main_mu1, main_mu2, main_mu3, main_mu4,
             n, m, iter_max, epsilon, omega
          )
-         control_graph, c_iter = dirichletsolver.solve_relax_method_main(
+         control_graph, c_iterations, c_epsilon_n = dirichletsolver.solve_relax_method_main(
             main_f, a, b, c, d,
             main_mu1, main_mu2, main_mu3, main_mu4,
-            n * 2, m * 2, iter_max, epsilon, omega
+            n * 2, m * 2, iter_max, epsilon_2, omega_2
          )
          control_values = [row[::2] for row in control_graph[::2]]
          
@@ -205,7 +220,14 @@ if build_button:
          'max_error_y' : max_error_y,
          'error_eval_list' : error_eval_list,
          'iterations' : iterations,
-         'omega' : omega
+         'c_iterations' : c_iterations,
+         'omega' : omega,
+         'omega_2' : omega_2,
+         'epsilon' : epsilon,
+         'epsilon_2' : epsilon_2,
+         'epsilon_n' : epsilon_n,
+         'c_epsilon_n' : c_epsilon_n,
+         'initial_approximation' : initial_approximation
       }
 
 # Display plot if data is available
@@ -224,11 +246,18 @@ if st.session_state.data is not None:
    max_error_y = data['max_error_y']
    error_eval_list = data['error_eval_list']
    iterations = data['iterations']
+   c_iterations = data['c_iterations']
    omega = data['omega']
+   oemga_2 = data['omega_2']
+   epsilon = data['epsilon']
+   epsilon_2 = data['epsilon_2']
+   epsilon_n = data['epsilon_n']
+   c_epsilon_n = data['c_epsilon_n']
+   initial_approximation = data['initial_approximation']
     
    # PLOT
    
-   tab1, tab2, tab3 = st.tabs(["Численное решение", "Контрольное решение", "Погрешность"])
+   tab1, tab2, tab3, tab4 = st.tabs(["Численное решение", "Контрольное решение", "Погрешность", "Начальное приближение"])
 
    # Prepare coordinate grids
    x_step = (b - a) / n
@@ -241,6 +270,7 @@ if st.session_state.data is not None:
    z_solution = [[solution[i][j] for i in range(n + 1)] for j in range(m + 1)]
    z_control = [[control_values[i][j] for i in range(n + 1)] for j in range(m + 1)]
    z_errors = [[error_eval_list[i][j] for i in range(n + 1)] for j in range(m + 1)]
+   z_initial_approximation = [[initial_approximation[i][j] for i in range(n + 1)] for j in range(m + 1)]
 
    with tab1:
       st.subheader("3D Поверхность численного решения")
@@ -356,14 +386,54 @@ if st.session_state.data is not None:
       
       st.plotly_chart(fig_error, use_container_width=True)
    
+   with tab4:
+      st.subheader("3D График начального приближения")
+      
+      # Create 3D surface plot
+      fig_surface = go.Figure()
+      
+      # Add numerical solution surface
+      fig_surface.add_trace(go.Surface(
+         z=z_initial_approximation,
+         x=x_coords,
+         y=y_coords,
+         colorscale='Viridis',
+         name='Поверхность контроля',
+         showscale=True,
+         colorbar=dict(title = "V0(x,y)")
+      ))
+      
+      # Update layout
+      fig_surface.update_layout(
+         title='Решение задачи Дирихле',
+         scene=dict(
+            xaxis_title='X',
+            yaxis_title='Y',
+            zaxis_title="V0(x,y)",
+            camera=dict(
+                  eye=dict(x=1.5, y=1.5, z=1.5)
+            )
+         ),
+         width=800,
+         height=600,
+         margin=dict(l=0, r=0, b=0, t=30)
+      )
+      
+      st.plotly_chart(fig_surface, use_container_width=True)
+   
    # INFO
    st.subheader("Справка")
    
    if problem == 0 or problem == 2:
-         residual = max([max(row) for row in calculate_residual(solution, test_f, a, b, c, d, n, m)])
+      residual = max([max(row) for row in calculate_residual(solution, test_f, a, b, c, d, n, m)])
+      residual_init = max([max(row) for row in calculate_residual(initial_approximation, test_f, a, b, c, d, n, m)])
+      
          
    if problem == 1 or problem == 3:
       residual = max([max(row) for row in calculate_residual(solution, main_f, a, b, c, d, n, m)])
+      residual_2 = max([max(row) for row in calculate_residual(control_graph, main_f, a, b, c, d, n * 2, m * 2)])
+      residual_init = max([max(row) for row in calculate_residual(initial_approximation, main_f, a, b, c, d, n, m)])
+      
    
    if problem == 0:
       st.info(f"""
@@ -371,13 +441,17 @@ if st.session_state.data is not None:
       n = {n} и числом разбиений по y m = {m}, метод Зейделя, применены критерии остановки по 
       точности εмет = {epsilon} и по числу итераций Nmax = {iter_max}
       На решение схемы (СЛАУ) затрачено итераций N = {iterations} и достигнута точность 
-      итерационного метода ε(N) = {error}
+      итерационного метода ε(N) = {epsilon_n}
 
       Схема (СЛАУ) решена с невязкой ||R(N)|| = {residual}
       для невязки СЛАУ использована норма «max»;
+      
+      Невязка начального приближения -- ||R0(N)|| = {residual_init}
 
       Тестовая задача должна быть решена с погрешностью не более ε = 0.5⋅10^(–6);
       задача решена с погрешностью ε1 = {error}.
+
+      ---
 
       Максимальное отклонение точного и численного решений наблюдается в узле 
       x{max_error_i} = {max_error_x}; y{max_error_j} = {max_error_y};
@@ -387,22 +461,40 @@ if st.session_state.data is not None:
       
    if problem == 1:
       st.info(f"""
-      Для решения основной задачи использованы сетка с числом разбиений по x
-      n = {n} и числом разбиений по y m = {m}, метод Зейделя, применены критерии остановки по 
-      точности εмет = {epsilon} и по числу итераций Nmax = {iter_max}
-      На решение схемы (СЛАУ) затрачено итераций N = {iterations} и достигнута точность 
-      итерационного метода ε(N) = {error}
+      Для решения основной задачи использована сетка с числом разбиений по x n = {n} 
+      и числом разбиений по y m = {m}, метод Зейделя, 
+      применены критерии остановки по точности εмет = {epsilon} и по числу итераций Nmax = {iter_max};
 
-      Схема (СЛАУ) решена с невязкой ||R(N)|| = {residual}
-      для невязки СЛАУ использована норма «max»;
+      На решение схемы (СЛАУ) затрачено итераций N = {iterations} и достигнута точность итерационного метода ε(N) = {epsilon_n};
+      
+      Схема (СЛАУ) решена с невязкой ||R(N)|| = {residual} использована норма «max»;
+      
+      Невязка начального приближения -- ||R0(N)|| = {residual_init}
+   
+ 
+      ---
 
-      Тестовая задача должна быть решена с погрешностью не более ε = 0.5⋅10^(–6);
-      задача решена с погрешностью ε1 = {error}.
+      Для контроля точности решения использована сетка с половинным шагом, 
+      метод Зейделя, 
+      применены критерии остановки по точности 
+      εмет-2 = {epsilon_2} и по числу итераций Nmax = {iter_max}
+
+      На решение задачи (СЛАУ) затрачено итераций N2 = {c_iterations} 
+      и достигнута точность итерационного метода ε(N2) = {c_epsilon_n}
+
+      Схема (СЛАУ) на сетке с половинным шагом решена с невязкой
+      ||R(N2)|| = {residual_2} использована норма «max»;
+      
+      Основная задача должна быть решена с точностью не хуже чем
+      ε = 0.5⋅10 –6; задача решена с точностью ε2 = {error}
+
+      ---
 
       Максимальное отклонение точного и численного решений наблюдается в узле 
-      x{max_error_i} = {max_error_x}; y{max_error_j} = {max_error_y};
-      В качестве начального приближения использовано
-      «Билинейная интерполяция по X, Y».
+      x{max_error_i} = {max_error_x}; y{max_error_j} = {max_error_y}; 
+
+      В качестве начального приближения на основной сетке использована «Билинейная интерполяция по X, Y»., 
+      на сетке с половинным шагом использована «Билинейная интерполяция по X, Y».
       """)
       
    if problem == 2:
@@ -415,34 +507,56 @@ if st.session_state.data is not None:
 
       Схема (СЛАУ) решена с невязкой ||R(N)|| = {residual}
       для невязки СЛАУ использована норма «max»;
+      
+      Невязка начального приближения -- ||R0(N)|| = {residual_init}
 
       Тестовая задача должна быть решена с погрешностью не более ε = 0.5⋅10^(–6);
       задача решена с погрешностью ε1 = {error}.
 
+      ---
+
       Максимальное отклонение точного и численного решений наблюдается в узле 
       x{max_error_i} = {max_error_x}; y{max_error_j} = {max_error_y};
-      В качестве начального приближения использовано
+      В качестве начального приближения использована
       «Билинейная интерполяция по X, Y».
       """)
       
    if problem == 3:
       st.info(f"""
-      Для решения основной задачи использованы сетка с числом разбиений по x
-      n = {n} и числом разбиений по y m = {m}, метод Верхней Релаксации с параметром ω = {omega}, применены критерии остановки по 
-      точности εмет = {epsilon} и по числу итераций Nmax = {iter_max}
-      На решение схемы (СЛАУ) затрачено итераций N = {iterations} и достигнута точность 
-      итерационного метода ε(N) = {error}
-      
-      Схема (СЛАУ) решена с невязкой ||R(N)|| = {residual}
-      для невязки СЛАУ использована норма «max»;
+      Для решения основной задачи использована сетка с числом разбиений по x n = {n} 
+      и числом разбиений по y m = {m}, метод верхней релаксации с параметром ω = {omega}, 
+      применены критерии остановки по точности εмет = {epsilon} и по числу итераций Nmax = {iter_max};
 
-      Тестовая задача должна быть решена с погрешностью не более ε = 0.5⋅10^(–6);
-      задача решена с погрешностью ε1 = {error}.
+      На решение схемы (СЛАУ) затрачено итераций N = {iterations} и достигнута точность итерационного метода ε(N) = {epsilon_n};
+      
+      Схема (СЛАУ) решена с невязкой ||R(N)|| = {residual} использована норма «max»;
+      
+      Невязка начального приближения -- ||R0(N)|| = {residual_init}
+      ---
+
+      Для контроля точности решения использована сетка с половинным шагом, 
+      метод верхней релаксации с параметром ω2 = {omega_2}, 
+      применены критерии остановки по точности 
+      εмет-2 = {epsilon_2} и по числу итераций Nmax = {iter_max}
+
+      На решение задачи (СЛАУ) затрачено итераций N2 = {c_iterations} 
+      и достигнута точность итерационного метода ε(N2) = {c_epsilon_n}
+
+      Схема (СЛАУ) на сетке с половинным шагом решена с невязкой
+      ||R(N2)|| = {residual_2} использована норма 
+      
+      Основная задача должна быть решена с точностью не хуже чем
+      ε = 0.5⋅10 –6; задача решена с точностью ε2 = {error}
+
+      ---
 
       Максимальное отклонение точного и численного решений наблюдается в узле 
-      x{max_error_i} = {max_error_x}; y{max_error_j} = {max_error_y};
-      В качестве начального приближения использовано
-      «Билинейная интерполяция по X, Y».
+      x{max_error_i} = {max_error_x}; y{max_error_j} = {max_error_y}; 
+
+
+      В качестве начального приближения на основной сетке использована «Билинейная интерполяция по X, Y», 
+      на сетке с половинным шагом использована «Билинейная интерполяция по X, Y».
+
       """)
    
    # DATA
