@@ -18,11 +18,16 @@ def calculate_residual(numerical_solution : list[list[float]], f : callable, a, 
       for j in range(1, m):
          residual[i].append(0)
          residual[i][j] = inv_h_sq * (numerical_solution[i + 1][j] - 2 * numerical_solution[i][j] + numerical_solution[i - 1][j])
+         print(residual[i][j], end=" ")
          residual[i][j] += inv_k_sq * (numerical_solution[i][j + 1] - 2 * numerical_solution[i][j] + numerical_solution[i][j - 1])
+         print(residual[i][j], end=" ")
          residual[i][j] += f(a + i * h, c + j * k)
+         print(residual[i][j], end=" ")
+         print(f(a + i * h, c + j * k))
+
       residual[i].append(0)
    residual.append([0 for j in range(0, m + 1)])
-
+   print("------------------")
    return residual
 
 
@@ -531,6 +536,7 @@ if st.session_state.data is not None:
       Схема (СЛАУ) решена с невязкой ||R(N)|| = {residual} использована норма «max»;
       
       Невязка начального приближения -- ||R0(N)|| = {residual_init}
+      
       ---
 
       Для контроля точности решения использована сетка с половинным шагом, 
