@@ -18,16 +18,11 @@ def calculate_residual(numerical_solution : list[list[float]], f : callable, a, 
       for j in range(1, m):
          residual[i].append(0)
          residual[i][j] = inv_h_sq * (numerical_solution[i + 1][j] - 2 * numerical_solution[i][j] + numerical_solution[i - 1][j])
-         print(residual[i][j], end=" ")
          residual[i][j] += inv_k_sq * (numerical_solution[i][j + 1] - 2 * numerical_solution[i][j] + numerical_solution[i][j - 1])
-         print(residual[i][j], end=" ")
          residual[i][j] += f(a + i * h, c + j * k)
-         print(residual[i][j], end=" ")
-         print(f(a + i * h, c + j * k))
 
       residual[i].append(0)
    residual.append([0 for j in range(0, m + 1)])
-   print("------------------")
    return residual
 
 
@@ -140,7 +135,7 @@ if build_button:
       
       c_iterations = 0
       c_epsilon_n = 0.0
-      
+      initial_approximation_2 = None
       if problem_id == 0:
          initial_approximation = dirichletsolver.get_initial_approximation(a, b, c, d, test_mu1, test_mu2, test_mu3, test_mu4, n, m)
          solution, iterations, epsilon_n = dirichletsolver.solve_seidel_method_main(
@@ -164,6 +159,9 @@ if build_button:
             n * 2, m * 2, iter_max, epsilon_2
          )
          control_values = [row[::2] for row in control_graph[::2]]
+         initial_approximation_2 = dirichletsolver.get_initial_approximation(
+               a, b, c, d, main_mu1, main_mu2, main_mu3, main_mu4, n * 2, m * 2
+            )
          
          
       if problem_id == 2:
@@ -189,7 +187,9 @@ if build_button:
             n * 2, m * 2, iter_max, epsilon_2, omega_2
          )
          control_values = [row[::2] for row in control_graph[::2]]
-         
+         initial_approximation_2 = dirichletsolver.get_initial_approximation(
+            a, b, c, d, main_mu1, main_mu2, main_mu3, main_mu4, n * 2, m * 2
+         )
       
       error_eval_list = [[None] * (m + 1) for _ in range(n + 1)]
       for i in range(n + 1):
@@ -232,7 +232,8 @@ if build_button:
          'epsilon_2' : epsilon_2,
          'epsilon_n' : epsilon_n,
          'c_epsilon_n' : c_epsilon_n,
-         'initial_approximation' : initial_approximation
+         'initial_approximation' : initial_approximation,
+         'initial_approximation_2': initial_approximation_2
       }
 
 # Display plot if data is available
@@ -259,6 +260,7 @@ if st.session_state.data is not None:
    epsilon_n = data['epsilon_n']
    c_epsilon_n = data['c_epsilon_n']
    initial_approximation = data['initial_approximation']
+   initial_approximation_2 = data['initial_approximation_2']
     
    # PLOT
    
@@ -438,7 +440,8 @@ if st.session_state.data is not None:
       residual = max(abs(v) for row in calculate_residual(solution, main_f, a, b, c, d, n, m) for v in row)
       residual_2 = max(abs(v) for row in calculate_residual(control_graph, main_f, a, b, c, d, n * 2, m * 2) for v in row)
       residual_init = max(abs(v) for row in calculate_residual(initial_approximation, main_f, a, b, c, d, n, m) for v in row)
-   
+      residual_init_2 = max(abs(v) for row in calculate_residual(initial_approximation_2, main_f, a, b, c, d, n * 2, m * 2) for v in row)
+
    if problem == 0:
       st.info(f"""
       Для решения тестовой задачи использованы сетка с числом разбиений по x
@@ -489,6 +492,8 @@ if st.session_state.data is not None:
       Схема (СЛАУ) на сетке с половинным шагом решена с невязкой
       ||R(N2)|| = {residual_2} использована норма «max»;
       
+      Невязка начального приближения для сетки с половинным шагом -- ||R0(N2)|| = {residual_init_2}
+
       Основная задача должна быть решена с точностью не хуже чем
       ε = 0.5⋅10 –6; задача решена с точностью ε2 = {error}
 
@@ -548,7 +553,7 @@ if st.session_state.data is not None:
       и достигнута точность итерационного метода ε(N2) = {c_epsilon_n}
 
       Схема (СЛАУ) на сетке с половинным шагом решена с невязкой
-      ||R(N2)|| = {residual_2} использована норма 
+      ||R(N2)|| = {residual_2} использована норма «max»
       
       Основная задача должна быть решена с точностью не хуже чем
       ε = 0.5⋅10 –6; задача решена с точностью ε2 = {error}
