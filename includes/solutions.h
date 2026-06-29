@@ -82,7 +82,9 @@ public:
                     this->ErrorEvaluationType::evaluateNew(V[index(i, j, m)], x, y);
                 }
             }
-
+            if (iteration % 10000 == 0) {
+                std::cout << iteration << " iterations done\n";
+            }
             if (!this->ErrorEvaluationType::getEvaluationResult())
                 break;
         }

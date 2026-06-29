@@ -505,6 +505,45 @@ if st.session_state.data is not None:
       В качестве начального приближения на основной сетке использована «Билинейная интерполяция по X, Y»., 
       на сетке с половинным шагом использована «Билинейная интерполяция по X, Y».
       """)
+
+      print(f"""
+      Для решения основной задачи использована сетка с числом разбиений по x n = {n} 
+      и числом разбиений по y m = {m}, метод Зейделя, 
+      применены критерии остановки по точности εмет = {epsilon} и по числу итераций Nmax = {iter_max};
+
+      На решение схемы (СЛАУ) затрачено итераций N = {iterations} и достигнута точность итерационного метода ε(N) = {epsilon_n};
+      
+      Схема (СЛАУ) решена с невязкой ||R(N)|| = {residual} использована норма «max»;
+      
+      Невязка начального приближения -- ||R0(N)|| = {residual_init}
+   
+ 
+      ---
+
+      Для контроля точности решения использована сетка с половинным шагом, 
+      метод Зейделя, 
+      применены критерии остановки по точности 
+      εмет-2 = {epsilon_2} и по числу итераций Nmax = {iter_max}
+
+      На решение задачи (СЛАУ) затрачено итераций N2 = {c_iterations} 
+      и достигнута точность итерационного метода ε(N2) = {c_epsilon_n}
+
+      Схема (СЛАУ) на сетке с половинным шагом решена с невязкой
+      ||R(N2)|| = {residual_2} использована норма «max»;
+      
+      Невязка начального приближения для сетки с половинным шагом -- ||R0(N2)|| = {residual_init_2}
+
+      Основная задача должна быть решена с точностью не хуже чем
+      ε = 0.5⋅10 –6; задача решена с точностью ε2 = {error}
+
+      ---
+
+      Максимальное отклонение точного и численного решений наблюдается в узле 
+      x{max_error_i} = {max_error_x}; y{max_error_j} = {max_error_y}; 
+
+      В качестве начального приближения на основной сетке использована «Билинейная интерполяция по X, Y»., 
+      на сетке с половинным шагом использована «Билинейная интерполяция по X, Y».
+      """)
       
    if problem == 2:
       st.info(f"""
@@ -575,15 +614,19 @@ if st.session_state.data is not None:
    # Test tables
 
    table_data = [[None] * (n + 3) for _ in range(m + 3)]
-   table_data[0] = ["", ""] + [f"x{i}" for i in range(n + 1)]
-   table_data[1] = ["", "j/i"] + [str(i) for i in range(n + 1)]
-   for j in range(2, m + 3):
-      table_data[j][0] = f"y{j - 2}"
-      table_data[j][1] = f"{j - 2}"
-      for i in range(2, n + 3):
-         table_data[j][i] = solution[i - 2][j - 2]
+   table_data[0] = ["", ""] + [f"x{i}" for i in range(0, n + 1, 2)]
+   table_data[1] = ["", "j/i"] + [str(i) for i in range(0, n + 1, 2)]
+   for j in range(2, m + 3, 2):
+      table_data[j // 2 + 1][0] = f"y{j - 2}"
+      table_data[j // 2 + 1][1] = f"{j - 2}"
+      for i in range(2, n + 3, 2):
+         table_data[j // 2 + 1][i // 2 + 1] = solution[i - 2][j - 2]
 
-   st.dataframe(table_data, width='stretch')
+   column_config = {}
+   for i in range(0, (n + 3) // 2):  # количество столбцов = n + 3
+      column_config[i] = st.column_config.Column(width=60)
+
+   st.dataframe(table_data, width='stretch', column_config=column_config)
 
    st.subheader("Точное решение" if problem == 0 or problem == 2 else "Решение с 2n, 2m")
 
@@ -596,7 +639,7 @@ if st.session_state.data is not None:
       for i in range(2, len(control_graph) + 2):
          table_data[j][i] = control_graph[i - 2][j - 2]
 
-   st.dataframe(table_data, width='stretch')
+   st.dataframe(table_data, width='stretch', column_config=column_config)
    
    st.subheader("Разность точного и контрольного решения")
    
@@ -609,5 +652,5 @@ if st.session_state.data is not None:
       for i in range(2, n + 3):
          table_data[j][i] = error_eval_list[i - 2][j - 2]
 
-   st.dataframe(table_data, width='stretch')
+   st.dataframe(table_data, width='stretch', column_config=column_config)
    
