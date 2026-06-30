@@ -628,22 +628,16 @@ if st.session_state.data is not None:
 
    st.dataframe(table_data, width='stretch', column_config=column_config)
 
-   # --- Вторая таблица ---
    st.subheader("Точное решение" if problem == 0 or problem == 2 else "Решение с 2n, 2m")
 
-   # Используем ту же логику для отображения только каждого второго элемента
-   table_data = [[None] * (len(control_graph) // 2 + 2) for _ in range(len(control_graph[0]) // 2 + 2)]
-   table_data[0] = ["", ""] + [f"x{i}" for i in range(0, len(control_graph), 2)]
-   table_data[1] = ["", "i/j"] + [str(i) for i in range(0, len(control_graph), 2)]
-   for j in range(2, len(control_graph[0]) + 1, 2):
-      table_data[j // 2 + 1][0] = f"y{j - 2}"
-      table_data[j // 2 + 1][1] = f"{j - 2}"
-      for i in range(2, len(control_graph) + 1, 2):
-         table_data[j // 2 + 1][i // 2 + 1] = control_graph[i - 2][j - 2]
-
-   column_config = {}
-   for i in range((len(control_graph) + 1) // 2 + 1):
-      column_config[i] = st.column_config.Column(width=60)
+   table_data = [[None] * (len(control_graph) + 2) for _ in range(len(control_graph[0]) + 2)]
+   table_data[0] = ["", ""] + [f"x{i}" for i in range(len(control_graph))]
+   table_data[1] = ["", "i/j"] + [str(i) for i in range(len(control_graph))]
+   for j in range(2, len(control_graph[0]) + 2):
+      table_data[j][0] = f"y{j - 2}"
+      table_data[j][1] = f"{j - 2}"
+      for i in range(2, len(control_graph) + 2):
+         table_data[j][i] = control_graph[i - 2][j - 2]
 
    st.dataframe(table_data, width='stretch', column_config=column_config)
    
