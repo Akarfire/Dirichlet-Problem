@@ -20,9 +20,9 @@ def calculate_residual(numerical_solution : list[list[float]], f : callable, a, 
          residual[i][j] = inv_h_sq * (numerical_solution[i + 1][j] - 2 * numerical_solution[i][j] + numerical_solution[i - 1][j])
          residual[i][j] += inv_k_sq * (numerical_solution[i][j + 1] - 2 * numerical_solution[i][j] + numerical_solution[i][j - 1])
          residual[i][j] += f(a + i * h, c + j * k)
+
       residual[i].append(0)
    residual.append([0 for j in range(0, m + 1)])
-
    return residual
 
 
@@ -135,7 +135,7 @@ if build_button:
       
       c_iterations = 0
       c_epsilon_n = 0.0
-      
+      initial_approximation_2 = None
       if problem_id == 0:
          initial_approximation = dirichletsolver.get_initial_approximation(a, b, c, d, test_mu1, test_mu2, test_mu3, test_mu4, n, m)
          solution, iterations, epsilon_n = dirichletsolver.solve_seidel_method_main(
@@ -159,6 +159,9 @@ if build_button:
             n * 2, m * 2, iter_max, epsilon_2
          )
          control_values = [row[::2] for row in control_graph[::2]]
+         initial_approximation_2 = dirichletsolver.get_initial_approximation(
+               a, b, c, d, main_mu1, main_mu2, main_mu3, main_mu4, n * 2, m * 2
+            )
          
          
       if problem_id == 2:
@@ -184,7 +187,9 @@ if build_button:
             n * 2, m * 2, iter_max, epsilon_2, omega_2
          )
          control_values = [row[::2] for row in control_graph[::2]]
-         
+         initial_approximation_2 = dirichletsolver.get_initial_approximation(
+            a, b, c, d, main_mu1, main_mu2, main_mu3, main_mu4, n * 2, m * 2
+         )
       
       error_eval_list = [[None] * (m + 1) for _ in range(n + 1)]
       for i in range(n + 1):
@@ -222,9 +227,13 @@ if build_button:
          'iterations' : iterations,
          'c_iterations' : c_iterations,
          'omega' : omega,
+         'omega_2' : omega_2,
+         'epsilon' : epsilon,
+         'epsilon_2' : epsilon_2,
          'epsilon_n' : epsilon_n,
          'c_epsilon_n' : c_epsilon_n,
-         'initial_approximation' : initial_approximation
+         'initial_approximation' : initial_approximation,
+         'initial_approximation_2': initial_approximation_2
       }
 
 # Display plot if data is available
@@ -245,8 +254,13 @@ if st.session_state.data is not None:
    iterations = data['iterations']
    c_iterations = data['c_iterations']
    omega = data['omega']
+   oemga_2 = data['omega_2']
+   epsilon = data['epsilon']
+   epsilon_2 = data['epsilon_2']
    epsilon_n = data['epsilon_n']
+   c_epsilon_n = data['c_epsilon_n']
    initial_approximation = data['initial_approximation']
+   initial_approximation_2 = data['initial_approximation_2']
     
    # PLOT
    
@@ -418,12 +432,16 @@ if st.session_state.data is not None:
    st.subheader("Справка")
    
    if problem == 0 or problem == 2:
-      residual = max([max(row) for row in calculate_residual(solution, test_f, a, b, c, d, n, m)])
+      residual = max(abs(v) for row in calculate_residual(solution, test_f, a, b, c, d, n, m) for v in row)
+      residual_init = max(abs(v) for row in calculate_residual(initial_approximation, test_f, a, b, c, d, n, m) for v in row)
+      
          
    if problem == 1 or problem == 3:
-      residual = max([max(row) for row in calculate_residual(solution, main_f, a, b, c, d, n, m)])
-      residual_2 = max([max(row) for row in calculate_residual(control_graph, main_f, a, b, c, d, n * 2, m * 2)])
-   
+      residual = max(abs(v) for row in calculate_residual(solution, main_f, a, b, c, d, n, m) for v in row)
+      residual_2 = max(abs(v) for row in calculate_residual(control_graph, main_f, a, b, c, d, n * 2, m * 2) for v in row)
+      residual_init = max(abs(v) for row in calculate_residual(initial_approximation, main_f, a, b, c, d, n, m) for v in row)
+      residual_init_2 = max(abs(v) for row in calculate_residual(initial_approximation_2, main_f, a, b, c, d, n * 2, m * 2) for v in row)
+
    if problem == 0:
       st.info(f"""
       Для решения тестовой задачи использованы сетка с числом разбиений по x
@@ -434,6 +452,8 @@ if st.session_state.data is not None:
 
       Схема (СЛАУ) решена с невязкой ||R(N)|| = {residual}
       для невязки СЛАУ использована норма «max»;
+      
+      Невязка начального приближения -- ||R0(N)|| = {residual_init}
 
       Тестовая задача должна быть решена с погрешностью не более ε = 0.5⋅10^(–6);
       задача решена с погрешностью ε1 = {error}.
@@ -455,6 +475,9 @@ if st.session_state.data is not None:
       На решение схемы (СЛАУ) затрачено итераций N = {iterations} и достигнута точность итерационного метода ε(N) = {epsilon_n};
       
       Схема (СЛАУ) решена с невязкой ||R(N)|| = {residual} использована норма «max»;
+      
+      Невязка начального приближения -- ||R0(N)|| = {residual_init}
+   
  
       ---
 
@@ -467,8 +490,10 @@ if st.session_state.data is not None:
       и достигнута точность итерационного метода ε(N2) = {c_epsilon_n}
 
       Схема (СЛАУ) на сетке с половинным шагом решена с невязкой
-      ||R(N2)|| = {residual_2} использована норма 
+      ||R(N2)|| = {residual_2} использована норма «max»;
       
+      Невязка начального приближения для сетки с половинным шагом -- ||R0(N2)|| = {residual_init_2}
+
       Основная задача должна быть решена с точностью не хуже чем
       ε = 0.5⋅10 –6; задача решена с точностью ε2 = {error}
 
@@ -476,10 +501,48 @@ if st.session_state.data is not None:
 
       Максимальное отклонение точного и численного решений наблюдается в узле 
       x{max_error_i} = {max_error_x}; y{max_error_j} = {max_error_y}; 
-      В качестве начального приближения использовано «Билинейная интерполяция по X, Y».
 
-      В качестве начального приближения на основной сетке использована  интерполяция по x, 
-      на сетке с половинным шагом использовано интерполяция по x, y
+      В качестве начального приближения на основной сетке использована «Билинейная интерполяция по X, Y»., 
+      на сетке с половинным шагом использована «Билинейная интерполяция по X, Y».
+      """)
+
+      print(f"""
+      Для решения основной задачи использована сетка с числом разбиений по x n = {n} 
+      и числом разбиений по y m = {m}, метод Зейделя, 
+      применены критерии остановки по точности εмет = {epsilon} и по числу итераций Nmax = {iter_max};
+
+      На решение схемы (СЛАУ) затрачено итераций N = {iterations} и достигнута точность итерационного метода ε(N) = {epsilon_n};
+      
+      Схема (СЛАУ) решена с невязкой ||R(N)|| = {residual} использована норма «max»;
+      
+      Невязка начального приближения -- ||R0(N)|| = {residual_init}
+   
+ 
+      ---
+
+      Для контроля точности решения использована сетка с половинным шагом, 
+      метод Зейделя, 
+      применены критерии остановки по точности 
+      εмет-2 = {epsilon_2} и по числу итераций Nmax = {iter_max}
+
+      На решение задачи (СЛАУ) затрачено итераций N2 = {c_iterations} 
+      и достигнута точность итерационного метода ε(N2) = {c_epsilon_n}
+
+      Схема (СЛАУ) на сетке с половинным шагом решена с невязкой
+      ||R(N2)|| = {residual_2} использована норма «max»;
+      
+      Невязка начального приближения для сетки с половинным шагом -- ||R0(N2)|| = {residual_init_2}
+
+      Основная задача должна быть решена с точностью не хуже чем
+      ε = 0.5⋅10 –6; задача решена с точностью ε2 = {error}
+
+      ---
+
+      Максимальное отклонение точного и численного решений наблюдается в узле 
+      x{max_error_i} = {max_error_x}; y{max_error_j} = {max_error_y}; 
+
+      В качестве начального приближения на основной сетке использована «Билинейная интерполяция по X, Y»., 
+      на сетке с половинным шагом использована «Билинейная интерполяция по X, Y».
       """)
       
    if problem == 2:
@@ -492,6 +555,8 @@ if st.session_state.data is not None:
 
       Схема (СЛАУ) решена с невязкой ||R(N)|| = {residual}
       для невязки СЛАУ использована норма «max»;
+      
+      Невязка начального приближения -- ||R0(N)|| = {residual_init}
 
       Тестовая задача должна быть решена с погрешностью не более ε = 0.5⋅10^(–6);
       задача решена с погрешностью ε1 = {error}.
@@ -500,7 +565,7 @@ if st.session_state.data is not None:
 
       Максимальное отклонение точного и численного решений наблюдается в узле 
       x{max_error_i} = {max_error_x}; y{max_error_j} = {max_error_y};
-      В качестве начального приближения использовано
+      В качестве начального приближения использована
       «Билинейная интерполяция по X, Y».
       """)
       
@@ -513,7 +578,9 @@ if st.session_state.data is not None:
       На решение схемы (СЛАУ) затрачено итераций N = {iterations} и достигнута точность итерационного метода ε(N) = {epsilon_n};
       
       Схема (СЛАУ) решена с невязкой ||R(N)|| = {residual} использована норма «max»;
- 
+      
+      Невязка начального приближения -- ||R0(N)|| = {residual_init}
+      
       ---
 
       Для контроля точности решения использована сетка с половинным шагом, 
@@ -525,7 +592,7 @@ if st.session_state.data is not None:
       и достигнута точность итерационного метода ε(N2) = {c_epsilon_n}
 
       Схема (СЛАУ) на сетке с половинным шагом решена с невязкой
-      ||R(N2)|| = {residual_2} использована норма 
+      ||R(N2)|| = {residual_2} использована норма «max»
       
       Основная задача должна быть решена с точностью не хуже чем
       ε = 0.5⋅10 –6; задача решена с точностью ε2 = {error}
@@ -534,10 +601,10 @@ if st.session_state.data is not None:
 
       Максимальное отклонение точного и численного решений наблюдается в узле 
       x{max_error_i} = {max_error_x}; y{max_error_j} = {max_error_y}; 
-      В качестве начального приближения использовано «Билинейная интерполяция по X, Y».
 
-      В качестве начального приближения на основной сетке использована  интерполяция по x, 
-      на сетке с половинным шагом использовано интерполяция по x, y
+
+      В качестве начального приближения на основной сетке использована «Билинейная интерполяция по X, Y», 
+      на сетке с половинным шагом использована «Билинейная интерполяция по X, Y».
 
       """)
    
@@ -545,7 +612,6 @@ if st.session_state.data is not None:
    st.subheader("Решение")
    
    # Test tables
-
    table_data = [[None] * (n + 3) for _ in range(m + 3)]
    table_data[0] = ["", ""] + [f"x{i}" for i in range(n + 1)]
    table_data[1] = ["", "j/i"] + [str(i) for i in range(n + 1)]
@@ -553,11 +619,24 @@ if st.session_state.data is not None:
       table_data[j][0] = f"y{j - 2}"
       table_data[j][1] = f"{j - 2}"
       for i in range(2, n + 3):
-         table_data[j][i] = solution[i - 2][j - 2]
+         # Форматируем число с 3 знаками после запятой
+         value = solution[i - 2][j - 2]
+         if isinstance(value, (int, float)):
+            table_data[j][i] = f"{value:.3f}"
+         else:
+            table_data[j][i] = value
 
-   st.dataframe(table_data, width='stretch')
+   # Создаем конфигурацию ширины для всех столбцов
+   column_config = {}
+   for i in range(n + 3):  # количество столбцов = n + 3
+      column_config[i] = st.column_config.Column(width=40)
+
+   st.dataframe(table_data,  column_config=column_config)
 
    st.subheader("Точное решение" if problem == 0 or problem == 2 else "Решение с 2n, 2m")
+
+   for i in range(len(control_graph) + 2):  # количество столбцов = n + 3
+      column_config[i] = st.column_config.Column(width=40)
 
    table_data = [[None] * (len(control_graph) + 2) for _ in range(len(control_graph[0]) + 2)]
    table_data[0] = ["", ""] + [f"x{i}" for i in range(len(control_graph))]
@@ -566,12 +645,19 @@ if st.session_state.data is not None:
       table_data[j][0] = f"y{j - 2}"
       table_data[j][1] = f"{j - 2}"
       for i in range(2, len(control_graph) + 2):
-         table_data[j][i] = control_graph[i - 2][j - 2]
+         value = control_graph[i - 2][j - 2]
+         if isinstance(value, (int, float)):
+            table_data[j][i] = f"{value:.3f}"
+         else:
+            table_data[j][i] = value
 
-   st.dataframe(table_data, width='stretch')
+   st.dataframe(table_data, width='stretch', column_config=column_config)
    
    st.subheader("Разность точного и контрольного решения")
    
+   for i in range(n + 3):  # количество столбцов = n + 3
+      column_config[i] = st.column_config.Column(width=40)
+
    table_data = [[None] * (n + 3) for _ in range(m + 3)]
    table_data[0] = ["", ""] + [f"x{i}" for i in range(n + 1)]
    table_data[1] = ["", "i/j"] + [str(i) for i in range(n + 1)]
@@ -579,7 +665,11 @@ if st.session_state.data is not None:
       table_data[j][0] = f"y{j - 2}"
       table_data[j][1] = f"{j - 2}"
       for i in range(2, n + 3):
-         table_data[j][i] = error_eval_list[i - 2][j - 2]
+         value = error_eval_list[i - 2][j - 2]
+         if isinstance(value, (int, float)):
+            table_data[j][i] = f"{value:.3E}"
+         else:
+            table_data[j][i] = value
 
-   st.dataframe(table_data, width='stretch')
+   st.dataframe(table_data, width='stretch', column_config=column_config)
    
